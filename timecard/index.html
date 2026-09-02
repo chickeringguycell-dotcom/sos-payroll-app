@@ -636,6 +636,52 @@
   </div>
 
   <script>
+
+    // === INSTANT AUTO-LIVE UPDATE & CLOUD SYNC ENGINE ===
+    (function() {
+      // 1. Force Service Worker to update and skip waiting
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then((registrations) => {
+          for (let reg of registrations) {
+            reg.update();
+            if (reg.waiting) {
+              reg.waiting.postMessage({ action: 'skipWaiting' });
+            }
+          }
+        });
+
+        // When new version takes control, seamlessly reload without losing user data
+        let refreshing = false;
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          if (!refreshing) {
+            refreshing = true;
+            console.log('New live version detected. Auto-refreshing app...');
+            window.location.reload();
+          }
+        });
+      }
+
+      // 2. Clear outdated browser cache on launch
+      if ('caches' in window) {
+        caches.keys().then((names) => {
+          names.forEach((name) => {
+            if (name !== 'sos-suite-live-v30') {
+              caches.delete(name);
+            }
+          });
+        });
+      }
+
+      // 3. Auto-sync on window focus (when reopening phone from pocket)
+      window.addEventListener('focus', () => {
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.getRegistrations().then(regs => {
+            regs.forEach(r => r.update());
+          });
+        }
+      });
+    })();
+
     const STORAGE_AUTH_KEY = 'sos_timecard_session_v1';
     const STORAGE_PUNCHES_KEY = 'sos_timecard_punches_v1';
     const STORAGE_ADJUSTMENTS_KEY = 'sos_adjustments_v1';
