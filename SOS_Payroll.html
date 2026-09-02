@@ -1427,11 +1427,11 @@ Timesheet and payroll taxes updated automatically.`);
               <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
                 <div>
                   <label style="font-weight:700; display:block; margin-bottom:4px; color:var(--emerald);">Hire Date</label>
-                  <input type="date" id="term-hire-date" class="input-field font-mono" value="${member.hireDate || '2026-01-15'}">
+                  <input type="date" id="term-hire-date" class="input-field font-mono" min="1960-01-01" max="2060-12-31" value="${member.hireDate || '2026-01-15'}">
                 </div>
                 <div>
                   <label style="font-weight:700; display:block; margin-bottom:4px; color:#EF4444;">Termination / Fired Date</label>
-                  <input type="date" id="term-date" class="input-field font-mono" value="${today}">
+                  <input type="date" id="term-date" class="input-field font-mono" min="1960-01-01" max="2060-12-31" value="${today}">
                 </div>
               </div>
 
@@ -1726,7 +1726,7 @@ Geofence perimeter: ${(radiusMiles * 5280).toFixed(0)} ft.`);
               <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
                 <div>
                   <label style="font-weight:700; display:block; margin-bottom:4px; color:var(--emerald);">📅 Official Hire / Start Date</label>
-                  <input type="date" id="member-hire-date" class="input-field font-mono" value="${member.hireDate || ''}">
+                  <input type="date" id="member-hire-date" class="input-field font-mono" min="1960-01-01" max="2060-12-31" value="${member.hireDate || ''}">
                 </div>
                 <div>
                   <label style="font-weight:700; display:block; margin-bottom:4px; color:var(--text-muted);">Employee ID Tag</label>
@@ -1744,7 +1744,7 @@ Geofence perimeter: ${(radiusMiles * 5280).toFixed(0)} ft.`);
                 </div>
                 <div>
                   <label style="font-weight:700; display:block; margin-bottom:4px; color:var(--gold-light);">🎂 Date of Birth (for Timecard)</label>
-                  <input type="date" id="member-dob" class="input-field font-mono" value="${member.dob || ''}">
+                  <input type="date" id="member-dob" class="input-field font-mono" min="1960-01-01" max="2060-12-31" value="${member.dob || ''}">
                 </div>
               </div>
 

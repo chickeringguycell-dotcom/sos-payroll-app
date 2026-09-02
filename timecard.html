@@ -482,7 +482,7 @@
 
       <div class="form-group">
         <label class="form-label">Date of Birth (DOB)</label>
-        <input type="date" id="loginDob" class="form-input">
+        <input type="date" id="loginDob" class="form-input" min="1960-01-01" max="2060-12-31">
       </div>
 
       <button class="btn-gold" onclick="handleEmployeeLogin()">Sign In to My Timecard</button>
@@ -700,6 +700,12 @@
       }
       if (!dobInput) {
         alert('Please select your birth date.');
+        return;
+      }
+
+      const birthYear = parseInt(dobInput.split('-')[0], 10);
+      if (isNaN(birthYear) || birthYear < 1960 || birthYear > 2060) {
+        alert('Please enter a valid birth date between 1960 and 2060 (100-year window).');
         return;
       }
 
