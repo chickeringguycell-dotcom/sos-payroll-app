@@ -1062,9 +1062,13 @@
                 </div>
               </div>
 
-              <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+              <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;">
                 <div>
-                  <label style="font-weight:700; display:block; margin-bottom:4px;">Personal Email (for paystub)</label>
+                  <label style="font-weight:700; display:block; margin-bottom:4px; color:var(--gold-light);">🎂 Date of Birth (for Timecard)</label>
+                  <input type="date" id="member-dob" class="input-field font-mono" value="${member.dob || ''}">
+                </div>
+                <div>
+                  <label style="font-weight:700; display:block; margin-bottom:4px;">Personal Email</label>
                   <input type="email" id="member-email" class="input-field" value="${member.email}" placeholder="e.g. jane@cleaners.com">
                 </div>
                 <div>
@@ -1135,6 +1139,7 @@
     window.saveMemberRecord = function(editIndex) {
       const label = document.getElementById('member-label').value.trim();
       const name = document.getElementById('member-name').value.trim();
+      const dob = document.getElementById('member-dob') ? document.getElementById('member-dob').value.trim() : '';
       const email = document.getElementById('member-email').value.trim();
       const phone = document.getElementById('member-phone').value.trim();
       const levelId = document.getElementById('member-level').value;
@@ -1167,6 +1172,7 @@
         name,
         email,
         phone,
+        dob,
         role,
         hourlyRate: rate,
         weeklyHours: editIndex !== null && AppData.team[editIndex] ? AppData.team[editIndex].weeklyHours : 0.0,
