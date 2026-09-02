@@ -1,0 +1,26 @@
+{
+  "id": "/sos-payroll-app/",
+  "name": "SOS Payroll",
+  "short_name": "SOS Payroll",
+  "description": "Spotless Office Solutions Commercial Payroll, Taxes & Operating Platform",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#090A0D",
+  "theme_color": "#D4AF37",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
