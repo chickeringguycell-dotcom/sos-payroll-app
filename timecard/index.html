@@ -708,6 +708,22 @@
       const dObj = new Date(parts[0], parts[1] - 1, parts[2]);
       const dobDisplay = dObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
+      
+      // Check if employee is in Archived / Former vault
+      try {
+        const rawPayroll = localStorage.getItem(STORAGE_PAYROLL_KEY);
+        if (rawPayroll) {
+          const pData = JSON.parse(rawPayroll);
+          if (pData && pData.archivedEmployees) {
+            const isArchived = pData.archivedEmployees.some(a => a.name.toLowerCase() === nameInput.toLowerCase());
+            if (isArchived) {
+              alert("⚠️ Profile Inactive\n\nThis employee account has been archived or separated. Please contact Spotless Office Solutions management.");
+              return;
+            }
+          }
+        }
+      } catch (err) {}
+
       const session = {
         name: nameInput,
         dob: dobInput,

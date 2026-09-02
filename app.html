@@ -827,6 +827,7 @@
             radiusMiles: 0.15
           }
         ],
+        archivedEmployees: [],
         expenses: []
       };
     }
@@ -848,6 +849,9 @@
               { id: 'site-1', name: 'Piedmont Medical Building', address: '123 E Main St, Spokane, WA 99201', lat: 47.6588, lng: -117.4260, radiusMiles: 0.15 },
               { id: 'site-2', name: 'Spokane Valley Dental Suite', address: '12410 E Sinto Ave, Spokane Valley, WA 99216', lat: 47.6690, lng: -117.2340, radiusMiles: 0.15 }
             ];
+          }
+                    if (!parsed.archivedEmployees) {
+            parsed.archivedEmployees = [];
           }
           return parsed;
         }
@@ -948,6 +952,7 @@
     }
 
     function refreshUI() {
+      renderArchivedVault();
       renderWorksitesTable();
       const m = calculateMetrics();
       const currentBankName = AppData.company.bankName || 'Qualstar Bank';
@@ -1024,7 +1029,7 @@
                 <div style="display:flex; gap:4px;">
                   <button class="btn-gold" style="padding:4px 8px; font-size:11px;" onclick="emailMemberPaystub(${i})">📧 Stub</button>
                   <button class="btn-dark" style="padding:4px 6px; font-size:11px;" onclick="openEditMemberModal(${i})">✏️</button>
-                  ${!isOwner ? `<button class="btn-rose" style="padding:4px 6px; font-size:11px;" onclick="deleteMember(${i})">✕</button>` : ''}
+                  ${!isOwner ? `<button class="btn-rose" style="padding:4px 8px; font-size:11px; font-weight:800;" title="Terminate / Archive Employee" onclick="openTerminateModal(${i})">🗑️ Archive</button>` : ''}
                 </div>
               </td>
             </tr>
@@ -1315,6 +1320,223 @@ Timesheet and payroll taxes updated automatically.`);
     }
 
     
+    
+    // === ARCHIVE VAULT & TERMINATION ENGINE ===
+    let isVaultOpen = false;
+    window.toggleArchivedVault = function() {
+      isVaultOpen = !isVaultOpen;
+      const container = document.getElementById('archived-vault-container');
+      const btnText = document.getElementById('btn-vault-toggle-text');
+      if (container && btnText) {
+        if (isVaultOpen) {
+          container.style.display = 'block';
+          btnText.innerText = '📁 Hide Archived Records';
+        } else {
+          container.style.display = 'none';
+          btnText.innerText = '📁 Show Archived Records';
+        }
+      }
+    };
+
+    window.renderArchivedVault = function() {
+      const tbody = document.getElementById('archived-employees-tbody');
+      if (!tbody) return;
+      const archived = AppData.archivedEmployees || [];
+
+      if (archived.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:24px; color:var(--text-muted);">No archived records. All past employees and their complete wage history will be stored here.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = archived.map((emp, i) => {
+        const hireDisplay = emp.hireDate || 'Not specified';
+        const termDisplay = emp.terminationDate || 'Recently';
+        const totalWages = Number(emp.totalLifetimeWages || (emp.weeklyHours * emp.hourlyRate) || 0);
+        const totalHours = Number(emp.totalLifetimeHours || emp.weeklyHours || 0);
+
+        return `
+          <tr>
+            <td>
+              <strong style="font-size:14px; color:#FFF;">${emp.name}</strong>
+              <div style="font-size:11px; color:var(--text-muted);">${emp.role}</div>
+              ${emp.dob ? `<div style="font-size:10px; color:var(--silver);">🎂 DOB: ${emp.dob}</div>` : ''}
+            </td>
+            <td>
+              <span class="badge badge-rose" style="font-weight:800; margin-bottom:4px; display:inline-block;">
+                ${emp.terminationType || 'TERMINATED / FIRED'}
+              </span>
+              <div style="font-size:12px; color:#E2E8F0; font-style:italic;">
+                "${emp.terminationReason || 'Separation of employment'}"
+              </div>
+            </td>
+            <td>
+              <div style="font-size:12px; color:var(--emerald);"><strong>Hired:</strong> ${hireDisplay}</div>
+              <div style="font-size:12px; color:var(--rose); margin-top:2px;"><strong>Fired / Left:</strong> ${termDisplay}</div>
+            </td>
+            <td>
+              <div class="font-mono" style="font-size:13px; font-weight:800; color:var(--gold-light);">
+                ${formatCurrency(totalWages)}
+              </div>
+              <div style="font-size:11px; color:var(--silver); margin-top:2px;">
+                ${totalHours.toFixed(2)} total hrs @ ${formatCurrency(emp.hourlyRate || 0)}/hr
+              </div>
+            </td>
+            <td>
+              <div style="font-size:12px; color:var(--silver);">
+                ${emp.bankName || 'Bank on file'}
+              </div>
+              <div style="font-size:11px; color:var(--text-muted);" class="font-mono">
+                Acct: ${emp.account ? '***' + emp.account.slice(-4) : 'On file'}
+              </div>
+            </td>
+            <td style="text-align:center;">
+              <button class="btn-emerald" style="padding:5px 10px; font-size:11px; font-weight:800;" onclick="rehireEmployee(${i})">
+                ♻️ Rehire
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    };
+
+    window.openTerminateModal = function(index) {
+      const member = AppData.team[index];
+      if (!member) return;
+
+      const today = new Date().toISOString().split('T')[0];
+      const mc = document.getElementById('modal-container');
+      mc.innerHTML = `
+        <div class="modal-overlay" onclick="if(event.target === this) closeModal('custom')">
+          <div class="modal-content" style="max-width:520px; border:2px solid #EF4444; box-shadow:0 10px 40px rgba(239,68,68,0.4);">
+            <div class="modal-header" style="border-bottom:1px solid #EF4444;">
+              <h3 class="font-cinzel" style="font-size:18px; font-weight:900; color:#EF4444; display:flex; align-items:center; gap:8px;">
+                <span>🗑️</span> Terminate / Archive Employee Record
+              </h3>
+              <button class="close-btn" onclick="closeModal('custom')">×</button>
+            </div>
+
+            <div style="display:flex; flex-direction:column; gap:12px; font-size:12px; margin-top:12px;">
+              <div style="background:rgba(239,68,68,0.08); border:1px solid rgba(239,68,68,0.3); border-radius:10px; padding:12px;">
+                <div style="font-weight:900; font-size:15px; color:#FFF;">${member.name} (${member.role})</div>
+                <div style="font-size:12px; color:var(--silver); margin-top:2px;">Rate: $${Number(member.hourlyRate).toFixed(2)}/hr • Assigned Site: ${member.worksiteName || 'None'}</div>
+                <div style="font-size:11px; color:#94A3B8; margin-top:6px;">
+                  🔒 <strong>Permanent Data Protection:</strong> All wage history, hours, direct deposit details, and tax records are permanently preserved in the Historical Archive Vault.
+                </div>
+              </div>
+
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                <div>
+                  <label style="font-weight:700; display:block; margin-bottom:4px; color:var(--emerald);">Hire Date</label>
+                  <input type="date" id="term-hire-date" class="input-field font-mono" value="${member.hireDate || '2026-01-15'}">
+                </div>
+                <div>
+                  <label style="font-weight:700; display:block; margin-bottom:4px; color:#EF4444;">Termination / Fired Date</label>
+                  <input type="date" id="term-date" class="input-field font-mono" value="${today}">
+                </div>
+              </div>
+
+              <div>
+                <label style="font-weight:700; display:block; margin-bottom:4px; color:var(--gold-light);">Departure Category</label>
+                <select id="term-type" class="input-field" style="font-weight:700;">
+                  <option value="FIRED - ATTENDANCE / NO-SHOW">🔴 Fired - Attendance / No-Show / Tardy</option>
+                  <option value="FIRED - PERFORMANCE / QUALITY">🔴 Fired - Performance / Cleanliness Standard</option>
+                  <option value="FIRED - POLICY VIOLATION">🔴 Fired - Company Policy / Misconduct</option>
+                  <option value="VOLUNTARY RESIGNATION">⚪ Voluntary Resignation / Quit</option>
+                  <option value="SEASONAL / CONTRACT END">🔵 End of Contract / Seasonal Layoff</option>
+                  <option value="OTHER">⚪ Other</option>
+                </select>
+              </div>
+
+              <div>
+                <label style="font-weight:700; display:block; margin-bottom:4px; color:var(--gold-light);">Specific Reason & Departure Notes</label>
+                <textarea id="term-reason" class="input-field" style="min-height:700px; max-height:120px; resize:vertical;" placeholder="Enter specific explanation (e.g. Failed to report for shift at Piedmont Medical; unexcused absence)."></textarea>
+              </div>
+            </div>
+
+            <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:20px;">
+              <button class="btn-dark" onclick="closeModal('custom')">Cancel</button>
+              <button onclick="confirmTermination(${index})" style="background:linear-gradient(135deg, #EF4444 0%, #DC2626 100%); color:#FFF; font-weight:900; font-size:13px; padding:10px 18px; border-radius:8px; border:none; cursor:pointer;">
+                🗑️ Confirm & Move to Vault
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+    };
+
+    window.confirmTermination = function(index) {
+      const member = AppData.team[index];
+      if (!member) return;
+
+      const hireDate = document.getElementById('term-hire-date').value;
+      const termDate = document.getElementById('term-date').value;
+      const termType = document.getElementById('term-type').value;
+      const termReason = document.getElementById('term-reason').value.trim() || 'Separation of employment';
+
+      if (!AppData.archivedEmployees) AppData.archivedEmployees = [];
+
+      const archivedRecord = {
+        ...member,
+        hireDate,
+        terminationDate: termDate,
+        terminationType: termType,
+        terminationReason: termReason,
+        archivedAt: Date.now()
+      };
+
+      // Push to Archive Vault
+      AppData.archivedEmployees.unshift(archivedRecord);
+
+      // Remove from Active Roster
+      AppData.team.splice(index, 1);
+
+      saveState();
+      closeModal('custom');
+      refreshUI();
+
+      if (syncChannel) syncChannel.postMessage({ type: 'REFRESH_TIMECARD' });
+
+      alert(`Employee "${member.name}" has been moved to the Former Employees Vault.
+
+All wage and hour records are permanently secured in the Archive.`);
+    };
+
+    window.rehireEmployee = function(archivedIndex) {
+      const emp = AppData.archivedEmployees[archivedIndex];
+      if (!emp) return;
+
+      if (confirm(`Rehire ${emp.name} and restore them to the active payroll roster?`)) {
+        const restoredMember = {
+          id: emp.id || 'emp-' + Date.now(),
+          isOwner: false,
+          label: `Employee ${AppData.team.filter(t => !t.isOwner).length + 1}`,
+          name: emp.name,
+          dob: emp.dob || '',
+          email: emp.email || '',
+          phone: emp.phone || '',
+          role: emp.role || 'Cleaner II (Independent)',
+          hourlyRate: emp.hourlyRate || 23.50,
+          weeklyHours: 0.0,
+          hireDate: new Date().toISOString().split('T')[0],
+          worksiteId: emp.worksiteId || '',
+          worksiteName: emp.worksiteName || '',
+          bankName: emp.bankName || '',
+          routing: emp.routing || '',
+          account: emp.account || '',
+          waLniRate: 1.75
+        };
+
+        AppData.team.push(restoredMember);
+        AppData.archivedEmployees.splice(archivedIndex, 1);
+
+        saveState();
+        refreshUI();
+        if (syncChannel) syncChannel.postMessage({ type: 'REFRESH_TIMECARD' });
+
+        alert(`${emp.name} has been rehired and restored to the active payroll roster!`);
+      }
+    };
+
     // === WORKSITE MANAGEMENT FUNCTIONS ===
     window.renderWorksitesTable = function() {
       const tbody = document.getElementById('worksites-tbody');
@@ -1503,6 +1725,17 @@ Geofence perimeter: ${(radiusMiles * 5280).toFixed(0)} ft.`);
 
               <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
                 <div>
+                  <label style="font-weight:700; display:block; margin-bottom:4px; color:var(--emerald);">📅 Official Hire / Start Date</label>
+                  <input type="date" id="member-hire-date" class="input-field font-mono" value="${member.hireDate || ''}">
+                </div>
+                <div>
+                  <label style="font-weight:700; display:block; margin-bottom:4px; color:var(--text-muted);">Employee ID Tag</label>
+                  <input type="text" class="input-field font-mono" value="${member.id || 'AUTO'}" readonly style="background:rgba(0,0,0,0.3); color:var(--silver);">
+                </div>
+              </div>
+
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                <div>
                   <label style="font-weight:700; display:block; margin-bottom:4px; color:var(--gold-light);">🏢 Assigned Worksite (for GPS Geofencing)</label>
                   <select id="member-worksite-id" class="input-field" style="color:var(--gold-light); font-weight:700;">
                     <option value="">-- No Specific Site (Any Location) --</option>
@@ -1589,6 +1822,7 @@ Geofence perimeter: ${(radiusMiles * 5280).toFixed(0)} ft.`);
       const label = document.getElementById('member-label').value.trim();
       const name = document.getElementById('member-name').value.trim();
       const dob = document.getElementById('member-dob') ? document.getElementById('member-dob').value.trim() : '';
+      const hireDate = document.getElementById('member-hire-date') ? document.getElementById('member-hire-date').value : '';
       const worksiteSelect = document.getElementById('member-worksite-id');
       const worksiteId = worksiteSelect ? worksiteSelect.value : '';
       const matchedSite = (AppData.worksites || []).find(s => s.id === worksiteId);
@@ -1626,6 +1860,7 @@ Geofence perimeter: ${(radiusMiles * 5280).toFixed(0)} ft.`);
         email,
         phone,
         dob,
+        hireDate,
         worksiteId,
         worksiteName,
         role,
