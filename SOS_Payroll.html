@@ -343,6 +343,7 @@
     <a href="#sec-team" class="nav-btn">👥 Team, Owners & Employee Payroll</a>
     <a href="#sec-expenses" class="nav-btn">🧾 Business Expenses & Receipts</a>
     <a href="#sec-taxes" class="nav-btn">🏛️ Tax Vault (WA & IRS)</a>
+    <a href="#sec-worksites" class="nav-btn">🏢 Worksites & Geofence Facilities</a>
   </nav>
 
   <main id="app-viewport">
@@ -620,6 +621,43 @@
       </div>
     </section>
 
+  
+    <!-- 5. WORKSITES & CLIENT FACILITIES (GEOFENCING & GPS TARGETS) -->
+    <section id="sec-worksites" class="section-container">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:10px;">
+        <div>
+          <h2 class="font-cinzel section-title" style="margin-bottom:2px;">
+            <span>🏢</span> Client Worksites & Geofence Facilities
+          </h2>
+          <p style="font-size:12px; color:var(--text-muted);">
+            Physical client building locations for GPS presence verification during employee clock in/out.
+          </p>
+        </div>
+        <button class="btn-gold" style="padding:8px 16px; font-size:13px;" onclick="openAddWorksiteModal()">
+          + Add Worksite
+        </button>
+      </div>
+
+      <div class="card">
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Facility / Worksite Name</th>
+                <th>Physical Street Address</th>
+                <th>Assigned Cleaners</th>
+                <th>Geofence Radius</th>
+                <th style="text-align:center;">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="worksites-tbody">
+              <!-- Rendered dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
   </main>
 
   <!-- Download & Install Helper Modal -->
@@ -771,6 +809,24 @@
             waLniRate: 1.75
           }
         ],
+                worksites: [
+          {
+            id: 'site-1',
+            name: 'Piedmont Medical Building',
+            address: '123 E Main St, Spokane, WA 99201',
+            lat: 47.6588,
+            lng: -117.4260,
+            radiusMiles: 0.15
+          },
+          {
+            id: 'site-2',
+            name: 'Spokane Valley Dental Suite',
+            address: '12410 E Sinto Ave, Spokane Valley, WA 99216',
+            lat: 47.6690,
+            lng: -117.2340,
+            radiusMiles: 0.15
+          }
+        ],
         expenses: []
       };
     }
@@ -786,6 +842,12 @@
           const parsed = JSON.parse(raw);
           if (parsed.company && !parsed.company.bankName) {
             parsed.company.bankName = 'Qualstar Bank';
+          }
+                    if (!parsed.worksites) {
+            parsed.worksites = [
+              { id: 'site-1', name: 'Piedmont Medical Building', address: '123 E Main St, Spokane, WA 99201', lat: 47.6588, lng: -117.4260, radiusMiles: 0.15 },
+              { id: 'site-2', name: 'Spokane Valley Dental Suite', address: '12410 E Sinto Ave, Spokane Valley, WA 99216', lat: 47.6690, lng: -117.2340, radiusMiles: 0.15 }
+            ];
           }
           return parsed;
         }
@@ -886,6 +948,7 @@
     }
 
     function refreshUI() {
+      renderWorksitesTable();
       const m = calculateMetrics();
       const currentBankName = AppData.company.bankName || 'Qualstar Bank';
 
@@ -937,6 +1000,12 @@
                   <strong style="font-size:13px; color:${isOwner ? 'var(--gold-light)' : '#FFF'};">${member.name}</strong>
                 </div>
                 <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">${member.email || 'No email'}</div>
+                <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:3px;">
+                  <span style="font-size:10px; color:var(--gold-light); font-weight:700; background:rgba(212,175,55,0.1); padding:2px 6px; border-radius:6px; border:1px solid rgba(212,175,55,0.3);">
+                    🏢 ${member.worksiteName || 'Unassigned Site'}
+                  </span>
+                  ${member.dob ? `<span style="font-size:10px; color:var(--silver); background:var(--silver-light); padding:2px 6px; border-radius:6px; border:1px solid var(--border);">🎂 DOB: ${member.dob}</span>` : ''}
+                </div>
               </td>
               <td><span class="badge ${badgeClass}">${member.role}</span></td>
               <td class="font-mono" style="color:var(--gold-light); font-weight:800; font-size:13px;">${formatCurrency(rate)}/hr</td>
@@ -1044,22 +1113,24 @@
       } catch (e) {}
     }
 
+    
     function updateBellAlerts() {
       const adjs = getAdjustments();
-      const pending = adjs.filter(a => a.status === 'PENDING');
-      const count = pending.length;
+      const pendingHours = adjs.filter(a => a.status === 'PENDING' && (!a.type || a.type === 'HOURS_ADJUSTMENT'));
+      const geofenceAlerts = adjs.filter(a => a.type === 'GEOFENCE' && a.status === 'UNREAD');
+      const totalCount = pendingHours.length + geofenceAlerts.length;
 
       const badgeEl = document.getElementById('bellCounterBadge');
       const textEl = document.getElementById('bellBadgeText');
       const bellBtn = document.getElementById('btnPayrollBell');
 
       if (badgeEl && textEl && bellBtn) {
-        if (count > 0) {
-          badgeEl.innerText = count;
+        if (totalCount > 0) {
+          badgeEl.innerText = totalCount;
           badgeEl.style.display = 'inline-block';
-          textEl.innerText = `${count} Alert${count > 1 ? 's' : ''}`;
-          bellBtn.style.border = '2px solid #F59E0B';
-          bellBtn.style.boxShadow = '0 0 12px rgba(245, 158, 11, 0.6)';
+          textEl.innerText = `${totalCount} Alert${totalCount > 1 ? 's' : ''}`;
+          bellBtn.style.border = '2px solid #EF4444';
+          bellBtn.style.boxShadow = '0 0 14px rgba(239, 68, 68, 0.7)';
         } else {
           badgeEl.style.display = 'none';
           textEl.innerText = 'Alerts';
@@ -1073,43 +1144,98 @@
       const modal = document.getElementById('hoursApprovalModal');
       const listEl = document.getElementById('approvalRequestsList');
       const adjs = getAdjustments();
-      const pending = adjs.filter(a => a.status === 'PENDING');
+      const pendingHours = adjs.filter(a => a.status === 'PENDING' && (!a.type || a.type === 'HOURS_ADJUSTMENT'));
+      const geofenceAlerts = adjs.filter(a => a.type === 'GEOFENCE' && a.status === 'UNREAD');
 
-      if (pending.length === 0) {
+      if (pendingHours.length === 0 && geofenceAlerts.length === 0) {
         listEl.innerHTML = `
           <div style="text-align:center; padding:30px 10px; color:var(--text-muted);">
             <div style="font-size:32px; margin-bottom:10px;">✨</div>
             <div style="font-weight:700; color:var(--text-main); font-size:15px;">All Caught Up!</div>
-            <div style="font-size:12px; margin-top:4px;">No employee hours adjustment requests are currently waiting.</div>
+            <div style="font-size:12px; margin-top:4px;">No off-site geofence alerts or hours adjustment requests waiting.</div>
           </div>
         `;
       } else {
-        listEl.innerHTML = pending.map(req => `
-          <div style="background:var(--silver-light); border:1px solid var(--gold-dark); border-radius:14px; padding:16px; margin-bottom:14px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-              <span style="font-weight:900; font-size:16px; color:var(--text-main);">👤 ${req.employeeName}</span>
-              <span style="font-weight:900; font-size:15px; color:var(--gold-light); background:rgba(212,175,55,0.15); padding:3px 8px; border-radius:8px; border:1px solid var(--gold);">+${Number(req.hours).toFixed(2)} hrs</span>
+        let itemsHtml = '';
+
+        // 1. Geofence Alerts First (High Priority)
+        if (geofenceAlerts.length > 0) {
+          itemsHtml += `
+            <div style="font-size:12px; font-weight:900; color:#EF4444; text-transform:uppercase; margin-bottom:8px; display:flex; align-items:center; gap:6px;">
+              <span>⚠️</span> OFF-SITE CLOCK-IN GEOFENCE ALERTS (${geofenceAlerts.length})
             </div>
-            <div style="font-size:13px; color:var(--silver); margin-bottom:6px;">
-              <strong>Date:</strong> ${req.dateDisplay || req.date}
+          `;
+          itemsHtml += geofenceAlerts.map(geo => `
+            <div style="background:rgba(239, 68, 68, 0.08); border:2px solid #EF4444; border-radius:14px; padding:16px; margin-bottom:14px; box-shadow:0 4px 15px rgba(239,68,68,0.2);">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                <span style="font-weight:900; font-size:16px; color:#FFF;">🚨 ${geo.employeeName}</span>
+                <span style="font-weight:900; font-size:12px; color:#FFF; background:#EF4444; padding:3px 8px; border-radius:8px;">${geo.distanceMiles} MILES OFF-SITE</span>
+              </div>
+              <div style="font-size:13px; color:var(--gold-light); margin-bottom:4px;">
+                <strong>Event:</strong> ${geo.punchType === 'CLOCK_IN' ? '▶ Clock In' : '⏹ Clock Out'} at ${geo.timeStr || 'Recently'}
+              </div>
+              <div style="font-size:12px; color:#CBD5E1; margin-bottom:4px;">
+                <strong>Actual Punch Location:</strong> 📍 ${geo.currentAddress || 'GPS Coordinates on file'}
+              </div>
+              <div style="font-size:12px; color:var(--silver); margin-bottom:12px;">
+                <strong>Assigned Worksite:</strong> 🏢 ${geo.worksiteName || 'Assigned Facility'} (${geo.worksiteAddress || ''})
+              </div>
+              <div style="display:flex; justify-content:flex-end; gap:8px;">
+                <button onclick="dismissGeofenceAlert('${geo.id}')" style="background:linear-gradient(135deg, #1F2430 0%, #14171E 100%); color:#FFF; border:1px solid var(--border); font-weight:800; font-size:12px; padding:8px 14px; border-radius:8px; cursor:pointer;">
+                  ✓ Acknowledge / Dismiss
+                </button>
+              </div>
             </div>
-            <div style="background:var(--card-bg); border:1px solid var(--silver-border); border-radius:8px; padding:10px; font-size:13px; color:#E2E8F0; margin-bottom:14px; font-style:italic;">
-              "${req.reason}"
+          `).join('');
+        }
+
+        // 2. Hours Adjustment Requests
+        if (pendingHours.length > 0) {
+          itemsHtml += `
+            <div style="font-size:12px; font-weight:900; color:var(--gold); text-transform:uppercase; margin-top:12px; margin-bottom:8px; display:flex; align-items:center; gap:6px;">
+              <span>⏳</span> MISSED HOURS ADJUSTMENT REQUESTS (${pendingHours.length})
             </div>
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-              <button onclick="denyHoursRequest('${req.id}')" style="background:linear-gradient(135deg, #EF4444 0%, #DC2626 100%); color:#FFF; font-weight:800; font-size:13px; padding:10px; border-radius:8px; border:none; cursor:pointer;">
-                ❌ Deny
-              </button>
-              <button onclick="approveHoursRequest('${req.id}')" style="background:linear-gradient(135deg, #10B981 0%, #059669 100%); color:#FFF; font-weight:800; font-size:13px; padding:10px; border-radius:8px; border:none; cursor:pointer;">
-                ✅ Approve
-              </button>
+          `;
+          itemsHtml += pendingHours.map(req => `
+            <div style="background:var(--silver-light); border:1px solid var(--gold-dark); border-radius:14px; padding:16px; margin-bottom:14px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                <span style="font-weight:900; font-size:16px; color:var(--text-main);">👤 ${req.employeeName}</span>
+                <span style="font-weight:900; font-size:15px; color:var(--gold-light); background:rgba(212,175,55,0.15); padding:3px 8px; border-radius:8px; border:1px solid var(--gold);">+${Number(req.hours).toFixed(2)} hrs</span>
+              </div>
+              <div style="font-size:13px; color:var(--silver); margin-bottom:6px;">
+                <strong>Date:</strong> ${req.dateDisplay || req.date}
+              </div>
+              <div style="background:var(--card-bg); border:1px solid var(--silver-border); border-radius:8px; padding:10px; font-size:13px; color:#E2E8F0; margin-bottom:14px; font-style:italic;">
+                "${req.reason}"
+              </div>
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                <button onclick="denyHoursRequest('${req.id}')" style="background:linear-gradient(135deg, #EF4444 0%, #DC2626 100%); color:#FFF; font-weight:800; font-size:13px; padding:10px; border-radius:8px; border:none; cursor:pointer;">
+                  ❌ Deny
+                </button>
+                <button onclick="approveHoursRequest('${req.id}')" style="background:linear-gradient(135deg, #10B981 0%, #059669 100%); color:#FFF; font-weight:800; font-size:13px; padding:10px; border-radius:8px; border:none; cursor:pointer;">
+                  ✅ Approve
+                </button>
+              </div>
             </div>
-          </div>
-        `).join('');
+          `).join('');
+        }
+
+        listEl.innerHTML = itemsHtml;
       }
 
       modal.style.display = 'flex';
     };
+
+    window.dismissGeofenceAlert = function(geoId) {
+      let adjs = getAdjustments();
+      const target = adjs.find(a => a.id === geoId);
+      if (target) {
+        target.status = 'ACKNOWLEDGED';
+        saveAdjustments(adjs);
+        openApprovalModal();
+      }
+    };
+
 
     window.closeApprovalModal = function() {
       const modal = document.getElementById('hoursApprovalModal');
@@ -1188,6 +1314,153 @@ Timesheet and payroll taxes updated automatically.`);
       };
     }
 
+    
+    // === WORKSITE MANAGEMENT FUNCTIONS ===
+    window.renderWorksitesTable = function() {
+      const tbody = document.getElementById('worksites-tbody');
+      if (!tbody) return;
+      const sites = AppData.worksites || [];
+
+      if (sites.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:24px; color:var(--text-muted);">No worksites added yet. Click "+ Add Worksite" above.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = sites.map((site, i) => {
+        const assignedMembers = (AppData.team || []).filter(m => m.worksiteId === site.id);
+        const assignedNames = assignedMembers.length > 0 
+          ? assignedMembers.map(m => `<span class="badge badge-blue" style="margin:2px;">${m.name}</span>`).join('') 
+          : '<span style="color:var(--text-muted); font-size:11px;">No cleaners assigned</span>';
+
+        return `
+          <tr>
+            <td>
+              <strong style="font-size:14px; color:var(--gold-light);">${site.name}</strong>
+            </td>
+            <td style="font-size:13px; color:var(--text-main);">
+              📍 ${site.address}
+            </td>
+            <td>
+              <div style="display:flex; flex-wrap:wrap; gap:4px;">
+                ${assignedNames}
+              </div>
+            </td>
+            <td>
+              <span class="badge badge-gold font-mono">${site.radiusMiles ? (site.radiusMiles * 5280).toFixed(0) + ' ft (' + site.radiusMiles + ' mi)' : '500 ft (0.1 mi)'}</span>
+            </td>
+            <td style="text-align:center;">
+              <button class="btn-dark" style="padding:4px 8px; font-size:11px;" onclick="openAddWorksiteModal(${i})">✏️ Edit</button>
+              <button class="btn-rose" style="padding:4px 8px; font-size:11px;" onclick="deleteWorksite(${i})">✕</button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    };
+
+    window.openAddWorksiteModal = function(editIndex = null) {
+      const isEdit = editIndex !== null;
+      const site = isEdit ? AppData.worksites[editIndex] : {
+        name: '',
+        address: '',
+        lat: 47.6588,
+        lng: -117.4260,
+        radiusMiles: 0.15
+      };
+
+      const mc = document.getElementById('modal-container');
+      mc.innerHTML = `
+        <div class="modal-overlay" onclick="if(event.target === this) closeModal('custom')">
+          <div class="modal-content" style="max-width:500px;">
+            <div class="modal-header">
+              <h3 class="font-cinzel" style="font-size:18px; font-weight:900;">${isEdit ? '✏️ Edit Client Worksite' : '+ Add Client Worksite'}</h3>
+              <button class="close-btn" onclick="closeModal('custom')">×</button>
+            </div>
+
+            <div style="display:flex; flex-direction:column; gap:12px; font-size:12px;">
+              <div>
+                <label style="font-weight:700; display:block; margin-bottom:4px; color:var(--gold-light);">Facility / Worksite Name</label>
+                <input type="text" id="site-name" class="input-field" value="${site.name}" placeholder="e.g. Piedmont Medical Center, Suite 400">
+              </div>
+
+              <div>
+                <label style="font-weight:700; display:block; margin-bottom:4px; color:var(--gold-light);">Physical Street Address (with City, State, Zip)</label>
+                <input type="text" id="site-address" class="input-field" value="${site.address}" placeholder="e.g. 123 E Main St, Spokane, WA 99201">
+              </div>
+
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                <div>
+                  <label style="font-weight:700; display:block; margin-bottom:4px;">Geofence Radius (miles)</label>
+                  <input type="number" id="site-radius" class="input-field font-mono" value="${site.radiusMiles || 0.15}" step="0.05" min="0.05" max="5.0">
+                </div>
+                <div style="font-size:11px; color:var(--text-muted); display:flex; align-items:center;">
+                  Standard radius is 0.15 miles (~800 feet) to cover parking lots & multi-story buildings.
+                </div>
+              </div>
+            </div>
+
+            <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:20px;">
+              <button class="btn-dark" onclick="closeModal('custom')">Cancel</button>
+              <button class="btn-gold" onclick="saveWorksiteRecord(${isEdit ? editIndex : 'null'})">
+                ${isEdit ? 'Update Worksite' : 'Save Worksite'}
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+    };
+
+    window.saveWorksiteRecord = function(editIndex) {
+      const name = document.getElementById('site-name').value.trim();
+      const address = document.getElementById('site-address').value.trim();
+      const radiusMiles = parseFloat(document.getElementById('site-radius').value) || 0.15;
+
+      if (!name) {
+        alert('Please enter a worksite name.');
+        return;
+      }
+      if (!address) {
+        alert('Please enter a physical street address.');
+        return;
+      }
+
+      if (!AppData.worksites) AppData.worksites = [];
+
+      const record = {
+        id: editIndex !== null && AppData.worksites[editIndex] ? AppData.worksites[editIndex].id : 'site-' + Date.now(),
+        name,
+        address,
+        radiusMiles,
+        lat: 47.6588, // Standard regional centroid
+        lng: -117.4260
+      };
+
+      if (editIndex !== null) {
+        AppData.worksites[editIndex] = record;
+      } else {
+        AppData.worksites.push(record);
+      }
+
+      saveState();
+      closeModal('custom');
+      refreshUI();
+      if (syncChannel) syncChannel.postMessage({ type: 'REFRESH_TIMECARD' });
+      alert(`Worksite "${name}" saved successfully!
+
+Address: ${address}
+Geofence perimeter: ${(radiusMiles * 5280).toFixed(0)} ft.`);
+    };
+
+    window.deleteWorksite = function(index) {
+      const target = AppData.worksites[index];
+      if (!target) return;
+      if (confirm(`Are you sure you want to delete worksite "${target.name}"?`)) {
+        AppData.worksites.splice(index, 1);
+        saveState();
+        refreshUI();
+        if (syncChannel) syncChannel.postMessage({ type: 'REFRESH_TIMECARD' });
+      }
+    };
+
     // 👥 ADD & EDIT TEAM MEMBER MODAL (OWNERS & EMPLOYEES)
     window.openAddMemberModal = function(editIndex = null) {
       const isEdit = editIndex !== null;
@@ -1228,11 +1501,21 @@ Timesheet and payroll taxes updated automatically.`);
                 </div>
               </div>
 
-              <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;">
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                <div>
+                  <label style="font-weight:700; display:block; margin-bottom:4px; color:var(--gold-light);">🏢 Assigned Worksite (for GPS Geofencing)</label>
+                  <select id="member-worksite-id" class="input-field" style="color:var(--gold-light); font-weight:700;">
+                    <option value="">-- No Specific Site (Any Location) --</option>
+                    ${(AppData.worksites || []).map(s => `<option value="${s.id}" ${member.worksiteId === s.id ? 'selected' : ''}>${s.name} (${s.address})</option>`).join('')}
+                  </select>
+                </div>
                 <div>
                   <label style="font-weight:700; display:block; margin-bottom:4px; color:var(--gold-light);">🎂 Date of Birth (for Timecard)</label>
                   <input type="date" id="member-dob" class="input-field font-mono" value="${member.dob || ''}">
                 </div>
+              </div>
+
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
                 <div>
                   <label style="font-weight:700; display:block; margin-bottom:4px;">Personal Email</label>
                   <input type="email" id="member-email" class="input-field" value="${member.email}" placeholder="e.g. jane@cleaners.com">
@@ -1306,6 +1589,10 @@ Timesheet and payroll taxes updated automatically.`);
       const label = document.getElementById('member-label').value.trim();
       const name = document.getElementById('member-name').value.trim();
       const dob = document.getElementById('member-dob') ? document.getElementById('member-dob').value.trim() : '';
+      const worksiteSelect = document.getElementById('member-worksite-id');
+      const worksiteId = worksiteSelect ? worksiteSelect.value : '';
+      const matchedSite = (AppData.worksites || []).find(s => s.id === worksiteId);
+      const worksiteName = matchedSite ? matchedSite.name : '';
       const email = document.getElementById('member-email').value.trim();
       const phone = document.getElementById('member-phone').value.trim();
       const levelId = document.getElementById('member-level').value;
@@ -1339,6 +1626,8 @@ Timesheet and payroll taxes updated automatically.`);
         email,
         phone,
         dob,
+        worksiteId,
+        worksiteName,
         role,
         hourlyRate: rate,
         weeklyHours: editIndex !== null && AppData.team[editIndex] ? AppData.team[editIndex].weeklyHours : 0.0,

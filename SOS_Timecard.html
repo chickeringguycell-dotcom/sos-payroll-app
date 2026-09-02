@@ -529,7 +529,7 @@
         <span style="font-size:20px;">👤</span>
         <div>
           <div id="displayEmpName" style="font-weight:900; font-size:15px; color:var(--gold-light);">--</div>
-          <div id="displayEmpDob" style="font-size:11px; color:var(--silver);">Verified DOB: --</div>
+          <div id="displayEmpSite" style="font-size:11px; color:var(--gold); font-weight:700;">🏢 Assigned Site: Loading...</div>
         </div>
       </div>
       <button class="btn-sign-out" onclick="handleEmployeeSignOut()">Sign Out</button>
@@ -822,20 +822,119 @@
       return punchState.activePunches[empName] || null;
     }
 
-    function handleClockIn() {
+    
+    // === HAVERSINE DISTANCE FORMULA & GPS GEOFENCING ENGINE ===
+    function calculateDistanceMiles(lat1, lon1, lat2, lon2) {
+      const R = 3958.8; // Earth radius in miles
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+      const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLon/2) * Math.sin(dLon/2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      return R * c;
+    }
+
+    function getEmployeeWorksite(empName) {
+      try {
+        const raw = localStorage.getItem(STORAGE_PAYROLL_KEY);
+        if (!raw) return null;
+        const pData = JSON.parse(raw);
+        if (!pData || !pData.team) return null;
+
+        const member = pData.team.find(m => m.name.toLowerCase() === empName.toLowerCase());
+        if (member && member.worksiteId && pData.worksites) {
+          const site = pData.worksites.find(s => s.id === member.worksiteId);
+          if (site) return site;
+        }
+        // Fallback default worksite if none explicitly assigned
+        if (pData.worksites && pData.worksites.length > 0) {
+          return pData.worksites[0];
+        }
+      } catch (e) {}
+      return null;
+    }
+
+    function getCurrentGPSPosition() {
+      return new Promise((resolve) => {
+        if (!navigator.geolocation) {
+          resolve(null);
+          return;
+        }
+        navigator.geolocation.getCurrentPosition(
+          (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+          (err) => resolve(null),
+          { timeout: 6000, enableHighAccuracy: true }
+        );
+      });
+    }
+
+    async function handleClockIn() {
       if (!currentSession) return;
       const now = new Date();
+      const assignedSite = getEmployeeWorksite(currentSession.name);
+      
+      // Ping GPS Location
+      const pos = await getCurrentGPSPosition();
+      let isOffSite = false;
+      let distanceMiles = 0.0;
+      let punchLocationStr = 'Location Verified';
+
+      if (pos && assignedSite && assignedSite.lat && assignedSite.lng) {
+        distanceMiles = calculateDistanceMiles(pos.lat, pos.lng, assignedSite.lat, assignedSite.lng);
+        const radius = assignedSite.radiusMiles || 0.15;
+        
+        if (distanceMiles > radius) {
+          isOffSite = true;
+          punchLocationStr = `${distanceMiles.toFixed(1)} mi off-site (${pos.lat.toFixed(4)}, ${pos.lng.toFixed(4)})`;
+
+          // Generate Geofence Alert to SOS Payroll
+          const geoAlert = {
+            id: 'geo-' + Date.now(),
+            type: 'GEOFENCE',
+            employeeName: currentSession.name,
+            punchType: 'CLOCK_IN',
+            timeStr: now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }),
+            distanceMiles: distanceMiles.toFixed(1),
+            currentAddress: `GPS: ${pos.lat.toFixed(4)}, ${pos.lng.toFixed(4)}`,
+            worksiteName: assignedSite.name,
+            worksiteAddress: assignedSite.address,
+            status: 'UNREAD',
+            timestamp: Date.now()
+          };
+          adjustments.unshift(geoAlert);
+          saveAdjustments();
+        } else {
+          punchLocationStr = `On-Site (${assignedSite.name})`;
+        }
+      } else if (assignedSite) {
+        punchLocationStr = `On-Site (${assignedSite.name})`;
+      }
+
       punchState.activePunches[currentSession.name] = {
         employee: currentSession.name,
         clockInTime: now.getTime(),
         clockInDateStr: now.toLocaleDateString('en-US'),
-        clockInTimeStr: now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })
+        clockInTimeStr: now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }),
+        isOffSite: isOffSite,
+        locationStr: punchLocationStr
       };
+
       savePunchState();
       renderView();
+
+      if (isOffSite) {
+        alert(`Clocked In (Location Notice)
+
+You are currently ${distanceMiles.toFixed(1)} miles away from your assigned worksite (${assignedSite.name}). Management has been notified.`);
+      } else {
+        alert(`Clocked In Successfully!
+
+Verified at worksite: ${assignedSite ? assignedSite.name : 'Job Site'}`);
+      }
     }
 
-    function handleClockOut() {
+    async function handleClockOut() {
       if (!currentSession) return;
       const active = getActivePunch(currentSession.name);
       if (!active) return;
@@ -843,6 +942,38 @@
       const now = new Date();
       const diffHours = Math.max(0.01, (now.getTime() - active.clockInTime) / 3600000);
       const roundedHours = Math.round(diffHours * 100) / 100;
+      const assignedSite = getEmployeeWorksite(currentSession.name);
+
+      // Ping GPS Location on clock out
+      const pos = await getCurrentGPSPosition();
+      let isOffSite = false;
+      let distanceMiles = 0.0;
+      let punchLocationStr = active.locationStr || 'Logged Shift';
+
+      if (pos && assignedSite && assignedSite.lat && assignedSite.lng) {
+        distanceMiles = calculateDistanceMiles(pos.lat, pos.lng, assignedSite.lat, assignedSite.lng);
+        const radius = assignedSite.radiusMiles || 0.15;
+        if (distanceMiles > radius) {
+          isOffSite = true;
+          punchLocationStr = `${distanceMiles.toFixed(1)} mi off-site on clock out`;
+
+          const geoAlert = {
+            id: 'geo-' + Date.now(),
+            type: 'GEOFENCE',
+            employeeName: currentSession.name,
+            punchType: 'CLOCK_OUT',
+            timeStr: now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }),
+            distanceMiles: distanceMiles.toFixed(1),
+            currentAddress: `GPS: ${pos.lat.toFixed(4)}, ${pos.lng.toFixed(4)}`,
+            worksiteName: assignedSite.name,
+            worksiteAddress: assignedSite.address,
+            status: 'UNREAD',
+            timestamp: Date.now()
+          };
+          adjustments.unshift(geoAlert);
+          saveAdjustments();
+        }
+      }
 
       const completedPunch = {
         id: 'punch-' + Date.now(),
@@ -852,6 +983,8 @@
         clockIn: active.clockInTimeStr,
         clockOut: now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }),
         hours: roundedHours,
+        locationStr: punchLocationStr,
+        isOffSite: isOffSite || active.isOffSite,
         timestamp: now.getTime()
       };
 
@@ -859,11 +992,15 @@
       delete punchState.activePunches[currentSession.name];
       savePunchState();
 
-      // Transmit hours to SOS Payroll
       syncHoursToPayroll(currentSession.name, roundedHours);
       renderView();
-      alert(`Shift Logged Successfully!\n\nEmployee: ${currentSession.name}\nDuration: ${roundedHours} hrs\nTransmitted to SOS Payroll in Real Time.`);
+      alert(`Shift Logged Successfully!
+
+Employee: ${currentSession.name}
+Duration: ${roundedHours} hrs
+Location: ${punchLocationStr}`);
     }
+
 
     function syncHoursToPayroll(empName, addedHours) {
       try {
@@ -955,7 +1092,9 @@
       dashView.style.display = 'flex';
 
       document.getElementById('displayEmpName').innerText = currentSession.name;
-      document.getElementById('displayEmpDob').innerText = `DOB: ${currentSession.dobDisplay || currentSession.dob}`;
+      const assignedSite = getEmployeeWorksite(currentSession.name);
+      const siteDisplay = assignedSite ? assignedSite.name : 'General Worksite';
+      document.getElementById('displayEmpSite').innerText = `🏢 Assigned: ${siteDisplay}`;
 
       const activePunch = getActivePunch(currentSession.name);
       const btnIn = document.getElementById('btnClockIn');
@@ -1017,6 +1156,7 @@
               <div>
                 <div style="font-weight:700; color:var(--text-main);">${item.dateStr}</div>
                 <div style="font-size:11px; color:var(--silver);">${item.title}</div>
+                ${item.locationStr ? `<div style="font-size:10px; color:${item.isOffSite ? '#EF4444' : 'var(--emerald)'}; font-weight:700; margin-top:2px;">📍 ${item.locationStr}</div>` : ''}
               </div>
               <div style="text-align:right;">
                 <div style="font-weight:800; color:var(--gold-light);">${item.hours > 0 ? '+' : ''}${item.hours.toFixed(2)} h</div>
