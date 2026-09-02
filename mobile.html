@@ -343,7 +343,8 @@
     <a href="#sec-team" class="nav-btn">👥 Team, Owners & Employee Payroll</a>
     <a href="#sec-expenses" class="nav-btn">🧾 Business Expenses & Receipts</a>
     <a href="#sec-taxes" class="nav-btn">🏛️ Tax Vault (WA & IRS)</a>
-    <a href="#sec-worksites" class="nav-btn">🏢 Worksites & Geofence Facilities</a>
+    <a href="#sec-worksites" class="nav-btn">🏢 Client Contracts & Worksites</a>
+    <a href="#sec-archived" class="nav-btn" style="color:#F87171;">🗄️ Former Employees Vault</a>
   </nav>
 
   <main id="app-viewport">
@@ -623,6 +624,82 @@
 
   
     
+
+  
+    <!-- 5. NUMBERED CLIENT CONTRACTS & GEOFENCE WORKSITES -->
+    <section id="sec-worksites" class="section-container" style="margin-top:24px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:10px;">
+        <div>
+          <h2 class="font-cinzel section-title" style="margin-bottom:2px; border-bottom:none; padding-bottom:0;">
+            <span>🏢</span> Client Contracts, Worksites & Geofence Accounts
+          </h2>
+          <p style="font-size:12px; color:var(--text-muted);">
+            Manage client facilities with site numbers (#01 to #20+), street addresses, phone numbers, and geofence perimeters.
+          </p>
+        </div>
+        <button class="btn-gold" style="padding:8px 18px; font-size:13px; font-weight:800;" onclick="openAddWorksiteModal()">
+          + Add Contract / Site
+        </button>
+      </div>
+
+      <div class="card" style="padding:0; overflow:hidden; border:1px solid var(--border);">
+        <div class="table-container" style="overflow-x:auto;">
+          <table class="data-table" style="width:100%; border-collapse:collapse;">
+            <thead>
+              <tr style="background:#14171F;">
+                <th style="width:80px; text-align:center;">Site #</th>
+                <th>Contract / Facility Name</th>
+                <th>Physical Street Address</th>
+                <th>Site Phone & Contact</th>
+                <th>Assigned Cleaners</th>
+                <th>Geofence</th>
+                <th style="text-align:center; width:120px;">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="worksites-tbody">
+              <!-- Rendered dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6. FORMER / INACTIVE EMPLOYEES ARCHIVE VAULT -->
+    <section id="sec-archived" class="section-container" style="margin-top:28px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:10px;">
+        <div>
+          <h2 class="font-cinzel section-title" style="margin-bottom:2px; border-bottom:none; padding-bottom:0; color:#EF4444;">
+            <span>🗄️</span> Former & Inactive Employees Archive Vault
+          </h2>
+          <p style="font-size:12px; color:var(--text-muted);">
+            Fired, laid-off, and resigned employees removed from active payroll. All historical wages, hours, hire/fired dates, and direct deposit info are permanently preserved.
+          </p>
+        </div>
+        <div style="font-size:12px; color:var(--silver); font-weight:700;">
+          Total Archived: <span id="archived-count-badge" class="badge badge-rose">0</span>
+        </div>
+      </div>
+
+      <div class="card" style="padding:0; overflow:hidden; border:1px solid rgba(239,68,68,0.3);">
+        <div class="table-container" style="overflow-x:auto;">
+          <table class="data-table" style="width:100%; border-collapse:collapse;">
+            <thead>
+              <tr style="background:#1A1115;">
+                <th>Former Employee</th>
+                <th>Hire Date</th>
+                <th>Fired / Departure Date</th>
+                <th>Departure Category & Reason</th>
+                <th>Historical Rate & Bank</th>
+                <th style="text-align:center; width:130px;">Action</th>
+              </tr>
+            </thead>
+            <tbody id="archived-tbody">
+              <!-- Rendered dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
 
   </main>
 

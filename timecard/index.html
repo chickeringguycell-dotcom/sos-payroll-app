@@ -894,6 +894,98 @@
     
     
     // === DUAL-PLATFORM MOBILE GPS PING ENGINE (APPLE iOS & ANDROID) ===
+    
+    // === DUAL GPS VERIFICATION FOR CLOCK IN & CLOCK OUT ===
+    window.verifyPunchLocation = async function(punchType, worksite) {
+      if (!worksite || !worksite.address) {
+        return { isVerified: true, note: 'Floating (No Geofence Restriction)' };
+      }
+
+      const radiusMiles = worksite.radiusMiles || 0.15;
+      const siteNum = worksite.siteNumber || 'Assigned Site';
+
+      return new Promise((resolve) => {
+        if (!navigator.geolocation) {
+          resolve({ isVerified: true, note: 'GPS Not Available on Device' });
+          return;
+        }
+
+        const geoOptions = {
+          enableHighAccuracy: true,
+          timeout: 7000,
+          maximumAge: 0
+        };
+
+        navigator.geolocation.getCurrentPosition(
+          async (pos) => {
+            const userLat = pos.coords.latitude;
+            const userLng = pos.coords.longitude;
+            const accuracy = pos.coords.accuracy;
+
+            try {
+              // Geocode worksite address via OpenStreetMap Nominatim
+              const geoUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(worksite.address)}`;
+              const resp = await fetch(geoUrl, { headers: { 'Accept': 'application/json' } });
+              const geoData = await resp.json();
+
+              if (geoData && geoData.length > 0) {
+                const siteLat = parseFloat(geoData[0].lat);
+                const siteLng = parseFloat(geoData[0].lon);
+
+                const distMiles = calculateDistance(userLat, userLng, siteLat, siteLng);
+                const isOnSite = distMiles <= radiusMiles;
+
+                if (isOnSite) {
+                  resolve({
+                    isVerified: true,
+                    note: `📍 On-Site [${siteNum}] (${distMiles.toFixed(2)} mi away)`,
+                    coords: { lat: userLat, lng: userLng }
+                  });
+                } else {
+                  // OFF-SITE ALERT DETECTED
+                  const alertType = punchType === 'IN' ? 'OFF-SITE CLOCK-IN' : 'OFF-SITE CLOCK-OUT (LEFT JOB SITE)';
+                  const alertData = {
+                    id: 'geo-' + Date.now(),
+                    type: 'GEOFENCE',
+                    subType: punchType,
+                    employeeId: activeEmployee.id,
+                    employeeName: activeEmployee.name,
+                    worksiteId: worksite.id,
+                    worksiteName: worksite.name,
+                    siteNumber: siteNum,
+                    worksiteAddress: worksite.address,
+                    distanceMiles: distMiles.toFixed(2),
+                    punchTime: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                    userCoords: `${userLat.toFixed(5)}, ${userLng.toFixed(5)}`,
+                    accuracyFt: (accuracy * 3.28084).toFixed(0),
+                    timestamp: Date.now()
+                  };
+
+                  broadcastGeofenceAlert(alertData);
+
+                  resolve({
+                    isVerified: false,
+                    note: `⚠️ ${alertType} [${siteNum}] (${distMiles.toFixed(2)} mi away from site)`,
+                    distance: distMiles.toFixed(2),
+                    coords: { lat: userLat, lng: userLng }
+                  });
+                }
+              } else {
+                resolve({ isVerified: true, note: `📍 Location Pinged (${userLat.toFixed(3)}, ${userLng.toFixed(3)})` });
+              }
+            } catch (err) {
+              resolve({ isVerified: true, note: 'Location Recorded' });
+            }
+          },
+          (err) => {
+            console.warn('Geolocation fallback:', err.message);
+            resolve({ isVerified: true, note: 'Indoor GPS Weak - Punch Recorded' });
+          },
+          geoOptions
+        );
+      });
+    };
+
     function calculateDistanceMiles(lat1, lon1, lat2, lon2) {
       const R = 3958.8; // Earth radius in miles
       const dLat = (lat2 - lat1) * Math.PI / 180;
