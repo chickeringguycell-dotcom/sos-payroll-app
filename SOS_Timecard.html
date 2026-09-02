@@ -823,7 +823,9 @@
     }
 
     
-    // === HAVERSINE DISTANCE FORMULA & GPS GEOFENCING ENGINE ===
+    
+    
+    // === DUAL-PLATFORM MOBILE GPS PING ENGINE (APPLE iOS & ANDROID) ===
     function calculateDistanceMiles(lat1, lon1, lat2, lon2) {
       const R = 3958.8; // Earth radius in miles
       const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -847,7 +849,6 @@
           const site = pData.worksites.find(s => s.id === member.worksiteId);
           if (site) return site;
         }
-        // Fallback default worksite if none explicitly assigned
         if (pData.worksites && pData.worksites.length > 0) {
           return pData.worksites[0];
         }
@@ -855,27 +856,64 @@
       return null;
     }
 
-    function getCurrentGPSPosition() {
+    // Ping GPS Location on Apple iOS Safari & Android Chrome with automatic fallback
+    function pingDeviceGPS() {
       return new Promise((resolve) => {
         if (!navigator.geolocation) {
           resolve(null);
           return;
         }
+
+        // 1. First Attempt: High-Accuracy GPS satellite ping (Apple & Android)
         navigator.geolocation.getCurrentPosition(
-          (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-          (err) => resolve(null),
-          { timeout: 6000, enableHighAccuracy: true }
+          (pos) => {
+            resolve({
+              lat: pos.coords.latitude,
+              lng: pos.coords.longitude,
+              accuracy: pos.coords.accuracy || 10
+            });
+          },
+          (err) => {
+            // 2. Second Attempt: Fast Wi-Fi/Cellular Triangulation Fallback (indoor buildings)
+            navigator.geolocation.getCurrentPosition(
+              (pos2) => {
+                resolve({
+                  lat: pos2.coords.latitude,
+                  lng: pos2.coords.longitude,
+                  accuracy: pos2.coords.accuracy || 50
+                });
+              },
+              (err2) => {
+                console.warn('GPS ping unavailable or permission not yet granted:', err2);
+                resolve(null);
+              },
+              { enableHighAccuracy: false, timeout: 5000, maximumAge: 30000 }
+            );
+          },
+          { enableHighAccuracy: true, timeout: 7000, maximumAge: 0 }
         );
       });
     }
 
     async function handleClockIn() {
       if (!currentSession) return;
+      const btnIn = document.getElementById('btnClockIn');
+      const originalText = btnIn ? btnIn.innerHTML : '';
+      if (btnIn) {
+        btnIn.disabled = true;
+        btnIn.innerHTML = '<span>📡</span> Pinging GPS Location...';
+      }
+
       const now = new Date();
       const assignedSite = getEmployeeWorksite(currentSession.name);
       
-      // Ping GPS Location
-      const pos = await getCurrentGPSPosition();
+      // Ping GPS Satellite on phone (Apple & Android)
+      const pos = await pingDeviceGPS();
+      if (btnIn) {
+        btnIn.disabled = false;
+        btnIn.innerHTML = originalText;
+      }
+
       let isOffSite = false;
       let distanceMiles = 0.0;
       let punchLocationStr = 'Location Verified';
@@ -888,7 +926,7 @@
           isOffSite = true;
           punchLocationStr = `${distanceMiles.toFixed(1)} mi off-site (${pos.lat.toFixed(4)}, ${pos.lng.toFixed(4)})`;
 
-          // Generate Geofence Alert to SOS Payroll
+          // Generate Real-Time Geofence Alert to SOS Payroll
           const geoAlert = {
             id: 'geo-' + Date.now(),
             type: 'GEOFENCE',
@@ -924,13 +962,9 @@
       renderView();
 
       if (isOffSite) {
-        alert(`Clocked In (Location Notice)
-
-You are currently ${distanceMiles.toFixed(1)} miles away from your assigned worksite (${assignedSite.name}). Management has been notified.`);
+        alert(`Clocked In (Location Notice)\n\nYou are currently ${distanceMiles.toFixed(1)} miles away from your assigned worksite (${assignedSite.name}). Management has been notified.`);
       } else {
-        alert(`Clocked In Successfully!
-
-Verified at worksite: ${assignedSite ? assignedSite.name : 'Job Site'}`);
+        alert(`Clocked In Successfully!\n\nVerified at worksite: ${assignedSite ? assignedSite.name : 'Job Site'}`);
       }
     }
 
@@ -939,13 +973,25 @@ Verified at worksite: ${assignedSite ? assignedSite.name : 'Job Site'}`);
       const active = getActivePunch(currentSession.name);
       if (!active) return;
 
+      const btnOut = document.getElementById('btnClockOut');
+      const originalText = btnOut ? btnOut.innerHTML : '';
+      if (btnOut) {
+        btnOut.disabled = true;
+        btnOut.innerHTML = '<span>📡</span> Pinging GPS Location...';
+      }
+
       const now = new Date();
       const diffHours = Math.max(0.01, (now.getTime() - active.clockInTime) / 3600000);
       const roundedHours = Math.round(diffHours * 100) / 100;
       const assignedSite = getEmployeeWorksite(currentSession.name);
 
-      // Ping GPS Location on clock out
-      const pos = await getCurrentGPSPosition();
+      // Ping GPS Satellite on phone (Apple & Android)
+      const pos = await pingDeviceGPS();
+      if (btnOut) {
+        btnOut.disabled = false;
+        btnOut.innerHTML = originalText;
+      }
+
       let isOffSite = false;
       let distanceMiles = 0.0;
       let punchLocationStr = active.locationStr || 'Logged Shift';
@@ -994,12 +1040,10 @@ Verified at worksite: ${assignedSite ? assignedSite.name : 'Job Site'}`);
 
       syncHoursToPayroll(currentSession.name, roundedHours);
       renderView();
-      alert(`Shift Logged Successfully!
-
-Employee: ${currentSession.name}
-Duration: ${roundedHours} hrs
-Location: ${punchLocationStr}`);
+      alert(`Shift Logged Successfully!\n\nEmployee: ${currentSession.name}\nDuration: ${roundedHours} hrs\nLocation: ${punchLocationStr}`);
     }
+
+
 
 
     function syncHoursToPayroll(empName, addedHours) {
