@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sos-payroll-v7';
+const CACHE_NAME = 'sos-payroll-v8';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
