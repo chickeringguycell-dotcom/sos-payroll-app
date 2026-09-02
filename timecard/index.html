@@ -452,7 +452,7 @@
 <body>
 
   <!-- 1. LOGIN SCREEN (SHOWN WHEN NOT LOGGED IN) -->
-  <div id="loginView" class="login-container" style="display:none;">
+  <div id="loginView" class="login-container" style="display:flex;">
 
     <!-- 1-Tap Universal App Install Banner (Visible to All Devices) -->
     <div class="card" style="background: linear-gradient(135deg, #1A1D24 0%, #0F1117 100%); border: 2px solid var(--gold); padding: 12px 16px; margin-bottom: 4px; box-shadow: 0 0 18px rgba(212,175,55,0.3);">
@@ -1036,42 +1036,39 @@
       deferredPrompt = e;
     });
 
-    window.triggerTimecardInstall = function() {
+            window.triggerTimecardInstall = function() {
       if (deferredPrompt) {
         deferredPrompt.prompt();
         deferredPrompt.userChoice.then((choiceResult) => {
-          if (choiceResult.outcome === 'accepted') {
-            console.log('User installed SOS Timecard');
-          }
           deferredPrompt = null;
         });
       } else {
-        const userAgent = window.navigator.userAgent.toLowerCase();
-        const isIos = /iphone|ipad|ipod/.test(userAgent);
-        const isAndroid = /android/.test(userAgent);
+        const ua = (window.navigator.userAgent || '').toLowerCase();
+        const isIos = /iphone|ipad|ipod/.test(ua);
+        const isAndroid = /android/.test(ua);
         
         if (isIos) {
-          alert("📲 To Install SOS Timecard on iPhone/iPad:
+          alert(`To Install SOS Timecard on iPhone/iPad:
 
 1. Tap the Share button at bottom of Safari (Square with arrow pointing up)
 2. Scroll down and tap 'Add to Home Screen'
 3. Tap 'Add'
 
-The 3D Gold SOS Timecard app is now on your home screen!");
+The 3D Gold SOS Timecard icon is now on your home screen!`);
         } else if (isAndroid) {
-          alert("📲 To Install SOS Timecard on Android:
+          alert(`To Install SOS Timecard on Android:
 
 1. Tap the 3 dots menu (⋮) at top-right of Chrome
 2. Tap 'Install App' or 'Add to Home screen'
 
-The 3D Gold SOS Timecard app is now on your home screen!");
+The 3D Gold SOS Timecard icon is now on your home screen!`);
         } else {
-          alert("📲 To Install SOS Timecard on PC/Mac:
+          alert(`To Install SOS Timecard on PC/Mac:
 
-1. Click the Install App icon in the browser address bar (top right)
+1. Click the Install App icon in browser address bar (top right)
 2. Click 'Install'
 
-The app will open in its own standalone window!");
+The app will open in its own standalone window!`);
         }
       }
     };
