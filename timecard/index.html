@@ -358,6 +358,15 @@
     .history-item:last-child {
       border-bottom: none;
     }
+    .badge-punch {
+      background: rgba(148, 163, 184, 0.15);
+      color: var(--silver);
+      border: 1px solid var(--silver-border);
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 700;
+    }
     .badge-pending {
       background: rgba(245, 158, 11, 0.2);
       color: var(--amber);
@@ -801,7 +810,7 @@
       // Render History List
       const historyList = document.getElementById('historyList');
       const allItems = [
-        ...empHistory.map(p => ({ type: 'PUNCH', dateStr: p.dateStr, title: `Shift (${p.clockIn} - ${p.clockOut})`, hours: p.hours, status: 'APPROVED', timestamp: p.timestamp })),
+        ...empHistory.map(p => ({ type: 'PUNCH', dateStr: p.dateStr, title: `Shift (${p.clockIn} - ${p.clockOut})`, hours: p.hours, status: 'LOGGED_SHIFT', timestamp: p.timestamp })),
         ...adjustments.filter(a => a.employeeName === currentEmployee).map(a => ({ type: 'ADJ', dateStr: a.dateDisplay, title: `Manual Request: "${a.reason}"`, hours: a.hours, status: a.status, timestamp: a.timestamp }))
       ];
 
@@ -812,7 +821,8 @@
       } else {
         historyList.innerHTML = allItems.slice(0, 10).map(item => {
           let badgeHtml = '';
-          if (item.status === 'PENDING') badgeHtml = `<span class="badge-pending">⏳ Pending</span>`;
+          if (item.status === 'LOGGED_SHIFT') badgeHtml = `<span class="badge-punch">⏱ Logged Shift</span>`;
+          else if (item.status === 'PENDING') badgeHtml = `<span class="badge-pending">⏳ Pending Approval</span>`;
           else if (item.status === 'APPROVED') badgeHtml = `<span class="badge-approved">✅ Approved</span>`;
           else if (item.status === 'DENIED') badgeHtml = `<span class="badge-denied">❌ Denied</span>`;
 
@@ -830,6 +840,27 @@
           `;
         }).join('');
       }
+    }
+
+    
+    // === SEAMLESS BACKGROUND AUTO-UPDATER (NEVER RE-DOWNLOAD) ===
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js').then((reg) => {
+          reg.update();
+          reg.addEventListener('updatefound', () => {
+            const installing = reg.installing;
+            if (installing) {
+              installing.addEventListener('statechange', () => {
+                if (installing.state === 'installed' && navigator.serviceWorker.controller) {
+                  console.log('New version available, refreshing in background...');
+                  window.location.reload();
+                }
+              });
+            }
+          });
+        }).catch(err => console.log('SW registration error:', err));
+      });
     }
 
     window.addEventListener('DOMContentLoaded', init);
