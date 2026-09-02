@@ -622,41 +622,7 @@
     </section>
 
   
-    <!-- 5. WORKSITES & CLIENT FACILITIES (GEOFENCING & GPS TARGETS) -->
-    <section id="sec-worksites" class="section-container">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:10px;">
-        <div>
-          <h2 class="font-cinzel section-title" style="margin-bottom:2px;">
-            <span>🏢</span> Client Worksites & Geofence Facilities
-          </h2>
-          <p style="font-size:12px; color:var(--text-muted);">
-            Physical client building locations for GPS presence verification during employee clock in/out.
-          </p>
-        </div>
-        <button class="btn-gold" style="padding:8px 16px; font-size:13px;" onclick="openAddWorksiteModal()">
-          + Add Worksite
-        </button>
-      </div>
-
-      <div class="card">
-        <div class="table-container">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>Facility / Worksite Name</th>
-                <th>Physical Street Address</th>
-                <th>Assigned Cleaners</th>
-                <th>Geofence Radius</th>
-                <th style="text-align:center;">Actions</th>
-              </tr>
-            </thead>
-            <tbody id="worksites-tbody">
-              <!-- Rendered dynamically -->
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </section>
+    
 
   </main>
 
@@ -1537,6 +1503,7 @@ All wage and hour records are permanently secured in the Archive.`);
       }
     };
 
+    
     // === WORKSITE MANAGEMENT FUNCTIONS ===
     window.renderWorksitesTable = function() {
       const tbody = document.getElementById('worksites-tbody');
@@ -1544,40 +1511,66 @@ All wage and hour records are permanently secured in the Archive.`);
       const sites = AppData.worksites || [];
 
       if (sites.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:24px; color:var(--text-muted);">No worksites added yet. Click "+ Add Worksite" above.</td></tr>`;
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="5" style="text-align:center; padding:32px; color:var(--text-muted);">
+              <div style="font-size:28px; margin-bottom:8px;">🏢</div>
+              <div style="font-weight:700; font-size:14px; color:var(--text-main);">No worksites registered yet.</div>
+              <div style="font-size:12px; margin-top:4px; margin-bottom:12px;">Click below to add your first client facility address.</div>
+              <button class="btn-gold" style="padding:6px 14px; font-size:12px;" onclick="openAddWorksiteModal()">+ Add New Worksite</button>
+            </td>
+          </tr>
+        `;
         return;
       }
 
       tbody.innerHTML = sites.map((site, i) => {
         const assignedMembers = (AppData.team || []).filter(m => m.worksiteId === site.id);
-        const assignedNames = assignedMembers.length > 0 
-          ? assignedMembers.map(m => `<span class="badge badge-blue" style="margin:2px;">${m.name}</span>`).join('') 
-          : '<span style="color:var(--text-muted); font-size:11px;">No cleaners assigned</span>';
+        const assignedBadges = assignedMembers.length > 0 
+          ? assignedMembers.map(m => `<span class="badge badge-gold" style="margin:2px; font-weight:800;">👤 ${m.name}</span>`).join('') 
+          : '<span style="color:var(--text-muted); font-size:11px; font-style:italic;">No cleaners assigned</span>';
+
+        const radiusFt = site.radiusMiles ? (site.radiusMiles * 5280).toFixed(0) : '800';
 
         return `
-          <tr>
+          <tr style="background:rgba(255,255,255,0.01);">
             <td>
-              <strong style="font-size:14px; color:var(--gold-light);">${site.name}</strong>
-            </td>
-            <td style="font-size:13px; color:var(--text-main);">
-              📍 ${site.address}
-            </td>
-            <td>
-              <div style="display:flex; flex-wrap:wrap; gap:4px;">
-                ${assignedNames}
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span style="font-size:18px;">🏢</span>
+                <div>
+                  <strong style="font-size:14px; color:var(--gold-light);">${site.name}</strong>
+                  <div style="font-size:10px; color:var(--text-muted);">ID: ${site.id}</div>
+                </div>
               </div>
             </td>
             <td>
-              <span class="badge badge-gold font-mono">${site.radiusMiles ? (site.radiusMiles * 5280).toFixed(0) + ' ft (' + site.radiusMiles + ' mi)' : '500 ft (0.1 mi)'}</span>
+              <div style="font-size:13px; color:#F1F5F9; font-weight:600;">
+                📍 ${site.address}
+              </div>
             </td>
-            <td style="text-align:center;">
-              <button class="btn-dark" style="padding:4px 8px; font-size:11px;" onclick="openAddWorksiteModal(${i})">✏️ Edit</button>
-              <button class="btn-rose" style="padding:4px 8px; font-size:11px;" onclick="deleteWorksite(${i})">✕</button>
+            <td>
+              <div style="display:flex; flex-wrap:wrap; gap:4px;">
+                ${assignedBadges}
+              </div>
+            </td>
+            <td>
+              <span class="badge badge-emerald font-mono" style="font-size:11px; font-weight:800;">
+                🎯 ${radiusFt} ft (${site.radiusMiles || 0.15} mi)
+              </span>
+            </td>
+            <td style="text-align:center; white-space:nowrap;">
+              <button class="btn-dark" style="padding:6px 10px; font-size:11px; font-weight:800; border:1px solid var(--gold); margin-right:4px;" onclick="openAddWorksiteModal(${i})">
+                ✏️ Edit
+              </button>
+              <button class="btn-rose" style="padding:6px 10px; font-size:11px; font-weight:800;" onclick="deleteWorksite(${i})">
+                🗑️ Delete
+              </button>
             </td>
           </tr>
         `;
       }).join('');
     };
+
 
     window.openAddWorksiteModal = function(editIndex = null) {
       const isEdit = editIndex !== null;
