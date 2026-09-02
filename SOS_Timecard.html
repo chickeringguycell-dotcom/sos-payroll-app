@@ -460,12 +460,12 @@
         <div style="display: flex; align-items: center; gap: 10px;">
           <span style="font-size: 22px;">⏱</span>
           <div>
-            <div style="font-weight: 900; font-size: 14px; color: var(--gold-light);">Install SOS Timecard App</div>
+            <div style="font-weight: 900; font-size: 14px; color: var(--gold-light);">Download SOS Timecard App</div>
             <div style="font-size: 11px; color: #94A3B8;">1-Tap Home Screen App • iPhone, Android & PC</div>
           </div>
         </div>
         <button onclick="triggerTimecardInstall()" style="background: linear-gradient(135deg, var(--gold) 0%, var(--gold-dark) 100%); color: #000000; font-weight: 900; font-size: 13px; padding: 10px 16px; border-radius: 8px; border: none; cursor: pointer; white-space: nowrap; box-shadow: 0 0 12px rgba(212,175,55,0.4); text-transform:uppercase;">
-          📲 Install App
+          📲 Download App
         </button>
       </div>
     </div>
@@ -501,12 +501,12 @@
         <div style="display: flex; align-items: center; gap: 10px;">
           <span style="font-size: 22px;">⏱</span>
           <div>
-            <div style="font-weight: 900; font-size: 14px; color: var(--gold-light);">Install SOS Timecard App</div>
+            <div style="font-weight: 900; font-size: 14px; color: var(--gold-light);">Download SOS Timecard App</div>
             <div style="font-size: 11px; color: #94A3B8;">1-Tap Home Screen App • iPhone, Android & PC</div>
           </div>
         </div>
         <button onclick="triggerTimecardInstall()" style="background: linear-gradient(135deg, var(--gold) 0%, var(--gold-dark) 100%); color: #000000; font-weight: 900; font-size: 13px; padding: 10px 16px; border-radius: 8px; border: none; cursor: pointer; white-space: nowrap; box-shadow: 0 0 12px rgba(212,175,55,0.4); text-transform:uppercase;">
-          📲 Install App
+          📲 Download App
         </button>
       </div>
     </div>
@@ -519,7 +519,7 @@
         <span>SOS TIMECARD</span>
       </div>
       <button id="btnTopInstall" class="btn-top-install" onclick="triggerTimecardInstall()">
-        📲 Install App
+        📲 Download App
       </button>
     </div>
 
@@ -1029,50 +1029,39 @@
     }
 
     
-    // === 1-TAP UNIVERSAL PWA INSTALL ENGINE FOR ALL DEVICES ===
+    
+    // === 1-TAP DIRECT FILE DOWNLOAD & PWA INSTALL ENGINE ===
     let deferredPrompt = null;
     window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault();
       deferredPrompt = e;
     });
 
-            window.triggerTimecardInstall = function() {
+    window.triggerTimecardInstall = function() {
+      // 1. Trigger PWA native prompt if browser supports it
       if (deferredPrompt) {
         deferredPrompt.prompt();
-        deferredPrompt.userChoice.then((choiceResult) => {
+        deferredPrompt.userChoice.then(() => {
           deferredPrompt = null;
         });
-      } else {
-        const ua = (window.navigator.userAgent || '').toLowerCase();
-        const isIos = /iphone|ipad|ipod/.test(ua);
-        const isAndroid = /android/.test(ua);
-        
-        if (isIos) {
-          alert(`To Install SOS Timecard on iPhone/iPad:
+      }
 
-1. Tap the Share button at bottom of Safari (Square with arrow pointing up)
-2. Scroll down and tap 'Add to Home Screen'
-3. Tap 'Add'
-
-The 3D Gold SOS Timecard icon is now on your home screen!`);
-        } else if (isAndroid) {
-          alert(`To Install SOS Timecard on Android:
-
-1. Tap the 3 dots menu (⋮) at top-right of Chrome
-2. Tap 'Install App' or 'Add to Home screen'
-
-The 3D Gold SOS Timecard icon is now on your home screen!`);
-        } else {
-          alert(`To Install SOS Timecard on PC/Mac:
-
-1. Click the Install App icon in browser address bar (top right)
-2. Click 'Install'
-
-The app will open in its own standalone window!`);
-        }
+      // 2. Direct File Download straight to PC Downloads Tray
+      try {
+        const fullHtml = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+        const blob = new Blob([fullHtml], { type: 'text/html;charset=utf-8' });
+        const blobUrl = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = 'SOS_Timecard.html';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 2000);
+      } catch (e) {
+        console.error('File download fallback:', e);
       }
     };
-
 
     // === SEAMLESS BACKGROUND AUTO-UPDATER ===
     if ('serviceWorker' in navigator) {
