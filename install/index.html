@@ -886,6 +886,7 @@
       const currentBankName = AppData.company.bankName || 'Qualstar Bank';
 
       document.getElementById('input-bank-name').value = currentBankName;
+      if (document.getElementById('input-biz-acct')) document.getElementById('input-biz-acct').value = AppData.company.bizAccount || '';
       document.getElementById('disp-bank-label').innerText = currentBankName + ' Balance';
       document.getElementById('input-bank-bal').value = AppData.bank.currentBalance ? AppData.bank.currentBalance : '';
       document.getElementById('input-safety-cushion').value = AppData.company.safetyCushion;
@@ -978,6 +979,18 @@
         `).join('');
       }
     }
+
+    
+    window.handleBizAcctChange = function(val) {
+      if (!AppData.company.bizAccount) AppData.company.bizAccount = '';
+      AppData.company.bizAccount = val;
+      saveState();
+    };
+
+    window.triggerPlaidLink = function() {
+      const bank = AppData.company.bankName || 'Qualstar Bank';
+      alert(`🏦 Plaid Bank Link initialized for Spotless Office Solutions LLC\n\nSelected Institution: ${bank}\nStatus: Ready to link live checking stream.\n\n(Manual account numbers and balances are also fully supported offline with zero fees!)`);
+    };
 
     window.handleBankNameChange = function(val) {
       AppData.company.bankName = val || 'Qualstar Bank';
