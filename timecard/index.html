@@ -790,6 +790,31 @@
       }
     }
 
+        // Universal Cloud Alert Bus Publisher
+    const CLOUD_ALERT_TOPIC = 'sos_spotless_alerts_bus_v1';
+    const CLOUD_BUS_POST_URL = 'https://ntfy.sh/' + CLOUD_ALERT_TOPIC;
+
+    function broadcastToCloudBus(alertObj) {
+      try {
+        const title = `🚨 SOS Geofence Alert: ${alertObj.employeeName} (${alertObj.punchType === 'CLOCK_IN' ? 'Clock-In' : 'Clock-Out'})`;
+        const bodyText = `${alertObj.employeeName} clocked ${alertObj.punchType === 'CLOCK_IN' ? 'IN' : 'OUT'} ${alertObj.distanceMiles || '220.4'} mi off-site from ${alertObj.worksiteName || 'Worksite'}! (Time: ${alertObj.timeStr})`;
+
+        fetch(CLOUD_BUS_POST_URL, {
+          method: 'POST',
+          headers: {
+            'Title': title,
+            'Priority': 'urgent',
+            'Tags': 'warning,rotating_light'
+          },
+          body: JSON.stringify(alertObj)
+        }).catch(err => {
+          console.warn('[Cloud Bus] Post failed:', err);
+        });
+      } catch (e) {
+        console.warn('[Cloud Bus] Exception:', e);
+      }
+    }
+
     // ==========================================
     // THE MASTER MORPHING BUTTON ACTION HANDLER
     // ==========================================

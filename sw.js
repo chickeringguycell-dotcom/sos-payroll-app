@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sos-suite-live-v60';
+const CACHE_NAME = 'sos-suite-live-v61';
 const URLS_TO_CACHE = [
   './',
   './index.html',
@@ -36,6 +36,45 @@ self.addEventListener('activate', (event) => {
         })
       );
     }).then(() => self.clients.claim())
+  );
+});
+
+self.addEventListener('push', (event) => {
+  let payload = { title: '🚨 SOS Geofence Alert', body: 'New off-site punch detected!' };
+  try {
+    if (event.data) {
+      payload = event.data.json();
+    }
+  } catch (e) {
+    if (event.data) payload.body = event.data.text();
+  }
+
+  const options = {
+    body: payload.body,
+    icon: './logo.png',
+    badge: './logo.png',
+    tag: 'sos-push-' + Date.now(),
+    renotify: true,
+    requireInteraction: true,
+    vibrate: [400, 200, 400, 200, 400]
+  };
+
+  event.waitUntil(
+    self.registration.showNotification(payload.title, options)
+  );
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      if (clientList.length > 0) {
+        let client = clientList[0];
+        client.focus();
+        return client.navigate('./');
+      }
+      return clients.openWindow('./');
+    })
   );
 });
 
