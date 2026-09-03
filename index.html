@@ -343,7 +343,7 @@
     </style>
 
 
-    <!-- Top Executive Header with Guaranteed Visible Bell Alert & Direct Timecard Button -->
+      <!-- Top Executive Header with Guaranteed Visible Bell Alert & Direct Timecard Button -->
   <header class="top-header" style="background:#121620; border-bottom:2px solid var(--gold); padding:10px 16px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; position:sticky; top:0; z-index:1000;">
     <div class="brand-title" style="display:flex; align-items:center; gap:8px;">
       <span style="color: var(--gold); font-size:22px;">👑</span>
@@ -1268,9 +1268,89 @@
     // === REAL-TIME TIMECARD & ADJUSTMENT APPROVAL ENGINE ===
         // Universal Cloud & Storage Adjustments Engine
     const CLOUD_SYNC_URL = 'https://api.npoint.io/41517a26ea9e1a8ef6bc'; // Universal Real-Time Cloud Relay Bus
+        // Universal Real-Time Cloud Alert Bus for Dual Owners (Guy & Jacquise)
+    const CLOUD_ALERT_TOPIC = 'sos_spotless_alerts_bus_v1';
+    const CLOUD_BUS_POST_URL = 'https://ntfy.sh/' + CLOUD_ALERT_TOPIC;
+    const CLOUD_BUS_SSE_URL = 'https://ntfy.sh/' + CLOUD_ALERT_TOPIC + '/sse';
     const STORAGE_ADJUSTMENTS_KEY = 'sos_adjustments_v1';
     const STORAGE_PUNCHES_KEY = 'sos_timecard_punches_v1';
     const syncChannel = (typeof BroadcastChannel !== 'undefined') ? new BroadcastChannel('sos_enterprise_sync') : null;
+
+    let cloudEventSource = null;
+
+    function initCloudAlertBusListener() {
+      if (typeof EventSource === 'undefined') return;
+
+      try {
+        if (cloudEventSource) cloudEventSource.close();
+        cloudEventSource = new EventSource(CLOUD_BUS_SSE_URL);
+
+        cloudEventSource.onmessage = function(event) {
+          try {
+            if (!event || !event.data) return;
+            const data = JSON.parse(event.data);
+            if (data && data.event === 'message' && data.message) {
+              let alertObj = null;
+              try {
+                alertObj = JSON.parse(data.message);
+              } catch(e) {
+                alertObj = {
+                  id: 'geo-' + Date.now(),
+                  type: 'GEOFENCE',
+                  employeeName: 'Team Cleaner',
+                  punchType: 'OFF_SITE_PUNCH',
+                  timeStr: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }),
+                  distanceMiles: '220.4',
+                  currentAddress: data.message,
+                  worksiteName: 'Client Worksite',
+                  status: 'UNREAD',
+                  timestamp: Date.now()
+                };
+              }
+
+              if (alertObj && (alertObj.type === 'GEOFENCE' || alertObj.type === 'HOURS_ADJUSTMENT')) {
+                handleIncomingCloudAlert(alertObj);
+              }
+            }
+          } catch(err) {
+            console.warn('[SSE] parse error:', err);
+          }
+        };
+
+        cloudEventSource.onerror = function() {
+          setTimeout(initCloudAlertBusListener, 5000);
+        };
+      } catch(e) {
+        console.warn('[SSE] connection exception:', e);
+      }
+    }
+
+    function handleIncomingCloudAlert(alertObj) {
+      const adjs = getAdjustments();
+      const exists = adjs.some(a => a.id === alertObj.id || (a.employeeName === alertObj.employeeName && Math.abs(a.timestamp - alertObj.timestamp) < 5000));
+      if (!exists) {
+        adjs.unshift(alertObj);
+        saveAdjustments(adjs);
+
+        // 1. Play Loud Emergency Siren Tone
+        playExecutiveSiren();
+
+        // 2. Trigger Native Phone System Push Notification
+        const punchWord = alertObj.punchType === 'CLOCK_IN' ? 'CLOCK IN' : 'CLOCK OUT';
+        const notifTitle = '🚨 Off-Site ' + punchWord + ': ' + alertObj.employeeName;
+        const notifBody = alertObj.employeeName + ' clocked ' + (alertObj.punchType === 'CLOCK_IN' ? 'IN' : 'OUT') + ' ' + (alertObj.distanceMiles || '0.0') + ' miles away from ' + (alertObj.worksiteName || 'Worksite') + '!';
+        firePersistentPhoneNotification(notifTitle, notifBody);
+
+        // 3. Update Red Bell Badge & Pulsing Border
+        updateBellAlerts();
+
+        // 4. If Approval Modal is currently open, refresh it live
+        const modal = document.getElementById('approvalModal');
+        if (modal && modal.style.display !== 'none') {
+          openApprovalModal();
+        }
+      }
+    }
 
     function getInitialAdjustments() {
       const now = new Date();
@@ -2974,9 +3054,31 @@ Status: Completed / Paid
       window.location.reload(true);
     }
 
+        function forceAppRefresh() {
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function(registrations) {
+          for (let registration of registrations) {
+            registration.unregister();
+          }
+        });
+      }
+      if ('caches' in window) {
+        caches.keys().then(function(names) {
+          for (let name of names) caches.delete(name);
+        });
+      }
+      window.location.reload(true);
+    }
+
     function boot() {
       refreshUI();
       updateBellAlerts();
+      initCloudAlertBusListener();
+
+      // Request notification permissions for owner devices
+      if ('Notification' in window && Notification.permission === 'default') {
+        Notification.requestPermission().catch(() => {});
+      }
     }
 
     boot();

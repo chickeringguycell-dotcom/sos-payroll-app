@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#090A0D">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
-    <title>SOS Timecard</title>
+      <title>SOS Timecard</title>
   <meta name="apple-mobile-web-app-title" content="SOS Timecard">
   <meta name="application-name" content="SOS Timecard">
   <link rel="manifest" href="manifest.json">
@@ -1313,26 +1313,36 @@
       }
     }
 
-        // Universal Cloud Alert Bus Publisher
+            // Universal Real-Time Cloud Alert Publisher for Dual Owners
     const CLOUD_ALERT_TOPIC = 'sos_spotless_alerts_bus_v1';
     const CLOUD_BUS_POST_URL = 'https://ntfy.sh/' + CLOUD_ALERT_TOPIC;
 
     function broadcastToCloudBus(alertObj) {
       try {
-        const title = `🚨 SOS Geofence Alert: ${alertObj.employeeName} (${alertObj.punchType === 'CLOCK_IN' ? 'Clock-In' : 'Clock-Out'})`;
-        const bodyText = `${alertObj.employeeName} clocked ${alertObj.punchType === 'CLOCK_IN' ? 'IN' : 'OUT'} ${alertObj.distanceMiles || '220.4'} mi off-site from ${alertObj.worksiteName || 'Worksite'}! (Time: ${alertObj.timeStr})`;
+        const punchWord = alertObj.punchType === 'CLOCK_IN' ? 'CLOCK IN' : 'CLOCK OUT';
+        const title = '🚨 OFF-SITE ' + punchWord + ': ' + alertObj.employeeName;
+        const bodyText = alertObj.employeeName + ' clocked ' + (alertObj.punchType === 'CLOCK_IN' ? 'IN' : 'OUT') + ' ' + (alertObj.distanceMiles || '0.0') + ' mi off-site from ' + (alertObj.worksiteName || 'Worksite') + '!';
 
+        // 1. Post to Real-Time Cloud Relay Bus (Instant SSE delivery to Owner Phones & PC)
         fetch(CLOUD_BUS_POST_URL, {
           method: 'POST',
           headers: {
             'Title': title,
             'Priority': 'urgent',
-            'Tags': 'warning,rotating_light'
+            'Tags': 'rotating_light,warning,sos'
           },
           body: JSON.stringify(alertObj)
         }).catch(err => {
           console.warn('[Cloud Bus] Post failed:', err);
         });
+
+        // 2. Secondary Cloud Backup Relay (npoint JSON store)
+        fetch('https://api.npoint.io/41517a26ea9e1a8ef6bc', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(alertObj)
+        }).catch(() => {});
+
       } catch (e) {
         console.warn('[Cloud Bus] Exception:', e);
       }

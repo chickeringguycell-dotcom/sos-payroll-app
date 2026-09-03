@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sos-suite-live-v85';
+const CACHE_NAME = 'sos-suite-live-v86';
 const URLS_TO_CACHE = [
   './',
   './index.html',
@@ -44,6 +44,38 @@ self.addEventListener('message', (event) => {
   if (event.data && event.data.action === 'skipWaiting') {
     self.skipWaiting();
   }
+});
+
+// Rich System Push Notification Handler
+self.addEventListener('push', (event) => {
+  let payload = { title: '🚨 SOS Geofence Violation Alert', body: 'A cleaner has clocked in/out from an unauthorized off-site location!' };
+  if (event.data) {
+    try {
+      payload = event.data.json();
+    } catch(e) {
+      payload.body = event.data.text();
+    }
+  }
+
+  const options = {
+    body: payload.body,
+    icon: './logo.png',
+    badge: './logo.png',
+    vibrate: [400, 200, 400, 200, 400],
+    requireInteraction: true,
+    data: { url: './index.html?v=86' }
+  };
+
+  event.waitUntil(
+    self.registration.showNotification(payload.title, options)
+  );
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  event.waitUntil(
+    clients.openWindow(event.notification.data && event.notification.data.url ? event.notification.data.url : './')
+  );
 });
 
 self.addEventListener('fetch', (event) => {
