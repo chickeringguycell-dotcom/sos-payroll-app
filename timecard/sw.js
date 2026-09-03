@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sos-suite-live-v82';
+const CACHE_NAME = 'sos-suite-live-v85';
 const URLS_TO_CACHE = [
   './',
   './index.html',
@@ -12,6 +12,7 @@ const URLS_TO_CACHE = [
   './icon-512-tc.png',
   './apple-touch-icon-tc.png',
   './favicon-tc.png',
+  './favicon-tc.ico',
   './manifest.json'
 ];
 
