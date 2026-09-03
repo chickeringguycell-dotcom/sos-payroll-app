@@ -1,40 +1,14 @@
-const CACHE_NAME = 'sos-suite-live-v88';
-const URLS_TO_CACHE = [
-  './',
-  './index.html',
-  './SOS_Payroll.html',
-  './SOS_Timecard.html',
-  './timecard.html',
-  './timecard/index.html',
-  './sos_timecard_logo.png',
-  './logo.png',
-  './icon-192-tc.png',
-  './icon-512-tc.png',
-  './apple-touch-icon-tc.png',
-  './favicon-tc.png',
-  './favicon-tc.ico',
-  './manifest.json'
-];
+const CACHE_NAME = 'sos-suite-live-v89';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(URLS_TO_CACHE).catch(() => {});
-    })
-  );
 });
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
+    caches.keys().then((keys) => {
       return Promise.all(
-        cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME) {
-            console.log('[SW] Purging old cache:', cacheName);
-            return caches.delete(cacheName);
-          }
-        })
+        keys.map((k) => caches.delete(k))
       );
     }).then(() => self.clients.claim())
   );
@@ -46,38 +20,30 @@ self.addEventListener('message', (event) => {
   }
 });
 
-// Network-First for HTML navigation so updates appear immediately
+// NETWORK-ONLY for HTML documents & navigation requests (Never serve cached HTML)
 self.addEventListener('fetch', (event) => {
-  if (event.request.mode === 'navigate' || event.request.destination === 'document' || event.request.url.includes('.html')) {
+  const req = event.request;
+  const isHtml = req.mode === 'navigate' || req.destination === 'document' || req.url.includes('.html') || !req.url.includes('.');
+  
+  if (isHtml) {
     event.respondWith(
-      fetch(event.request)
-        .then((networkResponse) => {
-          if (networkResponse && networkResponse.status === 200) {
-            const responseClone = networkResponse.clone();
-            caches.open(CACHE_NAME).then((cache) => {
-              cache.put(event.request, responseClone);
-            });
-          }
-          return networkResponse;
-        })
-        .catch(() => caches.match(event.request))
+      fetch(req, { cache: 'no-store' })
+        .catch(() => caches.match(req))
     );
     return;
   }
 
-  // Stale-while-revalidate for assets
+  // Stale-while-revalidate for static image assets
   event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      const fetchPromise = fetch(event.request).then((networkResponse) => {
-        if (networkResponse && networkResponse.status === 200) {
-          const responseClone = networkResponse.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, responseClone);
-          });
+    caches.match(req).then((cached) => {
+      const networked = fetch(req).then((res) => {
+        if (res && res.status === 200 && req.method === 'GET') {
+          const clone = res.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(req, clone));
         }
-        return networkResponse;
-      }).catch(() => {});
-      return cachedResponse || fetchPromise;
+        return res;
+      }).catch(() => cached);
+      return cached || networked;
     })
   );
 });

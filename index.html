@@ -1,6 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="theme-color" content="#090A0D">
@@ -366,8 +369,8 @@
       </button>
 
       <!-- Refresh / Check Updates Button -->
-      <button id="btnForceRefresh" class="btn-dark" style="padding:7px 10px; font-size:11px; font-weight:800; border-radius:8px; border:1px solid var(--gold); cursor:pointer;" onclick="forceAppRefresh()" title="Check for latest live updates and refresh cache">
-        🔄 Refresh
+      <button id="btnForceRefresh" class="btn-gold" style="padding:8px 14px; font-size:12px; font-weight:900; border-radius:8px; cursor:pointer; background:linear-gradient(135deg, #E5A93C 0%, #B8860B 100%); color:#000; box-shadow:0 0 12px rgba(229,169,60,0.6); display:inline-flex; align-items:center; gap:6px;" onclick="forceAppRefresh()" title="Purge all caches and force load latest live updates">
+        🔄 Force Refresh
       </button>
     </div>
   </header>
@@ -3040,29 +3043,60 @@ Status: Completed / Paid
       if (mc) mc.innerHTML = '';
     };
 
-                async function forceAppRefresh() {
-      try {
-        const btn = document.getElementById('btnForceRefresh');
-        if (btn) btn.innerText = '⏳ Updating...';
-      } catch(e) {}
+                    // === ULTRA-AGGRESSIVE FORCE REFRESH & NUCLEAR CACHE PURGE ===
+    async function forceAppRefresh() {
+      const btn = document.getElementById('btnForceRefresh');
+      if (btn) {
+        btn.innerHTML = '💥 PURGING & UPDATING...';
+        btn.style.background = '#EF4444';
+        btn.style.color = '#FFF';
+        btn.style.boxShadow = '0 0 20px rgba(239,68,68,1)';
+      }
+
+      if (navigator.vibrate) {
+        navigator.vibrate([200, 100, 200]);
+      }
 
       try {
+        // 1. Unregister all service workers
         if ('serviceWorker' in navigator) {
           const registrations = await navigator.serviceWorker.getRegistrations();
-          for (let registration of registrations) {
-            await registration.unregister();
+          for (let reg of registrations) {
+            await reg.unregister();
           }
         }
+      } catch (e) {
+        console.warn('SW unregister error:', e);
+      }
+
+      try {
+        // 2. Wipe every CacheStorage entry
         if ('caches' in window) {
-          const names = await caches.keys();
-          for (let name of names) {
-            await caches.delete(name);
+          const cacheKeys = await caches.keys();
+          for (let key of cacheKeys) {
+            await caches.delete(key);
           }
         }
+      } catch (e) {
+        console.warn('Cache delete error:', e);
+      }
+
+      try {
+        // 3. Clear temporary session flags
+        sessionStorage.clear();
       } catch (e) {}
 
-      const cleanUrl = window.location.href.split('?')[0];
-      window.location.href = cleanUrl + '?ts=' + Date.now();
+      // 4. Force pre-fetch of fresh HTML directly bypassing browser cache
+      const nonce = Date.now() + '_' + Math.random().toString(36).substring(2, 8);
+      const cleanPath = window.location.origin + window.location.pathname;
+      const targetUrl = cleanPath + '?v=89&flush=' + nonce;
+
+      try {
+        await fetch(targetUrl, { cache: 'no-store', headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' } });
+      } catch(e) {}
+
+      // 5. Replace current location without leaving history trapped
+      window.location.replace(targetUrl);
     }
 
     function boot() {
