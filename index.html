@@ -1360,36 +1360,8 @@
       }
     }
 
-    function getInitialAdjustments() {
-      const now = new Date();
-      return [
-        {
-          id: 'geo-1',
-          type: 'GEOFENCE',
-          employeeName: 'Guy Chickering',
-          punchType: 'CLOCK_IN',
-          timeStr: now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }),
-          distanceMiles: '220.4',
-          currentAddress: 'GPS: 47.6101, -122.2015 (Western WA)',
-          worksiteName: 'Piedmont Medical Building',
-          worksiteAddress: '123 E Main St, Spokane, WA 99201',
-          status: 'UNREAD',
-          timestamp: Date.now() - 120000
-        },
-        {
-          id: 'geo-2',
-          type: 'GEOFENCE',
-          employeeName: 'Guy Chickering',
-          punchType: 'CLOCK_OUT',
-          timeStr: now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }),
-          distanceMiles: '220.4',
-          currentAddress: 'GPS: 47.6101, -122.2015 (Western WA)',
-          worksiteName: 'Piedmont Medical Building',
-          worksiteAddress: '123 E Main St, Spokane, WA 99201',
-          status: 'UNREAD',
-          timestamp: Date.now()
-        }
-      ];
+        function getInitialAdjustments() {
+      return [];
     }
 
     function getAdjustments() {
@@ -1397,12 +1369,14 @@
         const raw = localStorage.getItem(STORAGE_ADJUSTMENTS_KEY);
         if (raw) {
           const parsed = JSON.parse(raw);
-          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+          if (Array.isArray(parsed)) {
+            // Filter out any old mock/demo alerts with id geo-1 or geo-2
+            const realAlerts = parsed.filter(a => a.id !== 'geo-1' && a.id !== 'geo-2');
+            return realAlerts;
+          }
         }
       } catch (e) {}
-      const initAdjs = getInitialAdjustments();
-      localStorage.setItem(STORAGE_ADJUSTMENTS_KEY, JSON.stringify(initAdjs));
-      return initAdjs;
+      return [];
     }
 
     function saveAdjustments(adjs) {
@@ -1531,7 +1505,7 @@
       lastAlertCount = totalCount;
     }
 
-    window.openApprovalModal = function() {
+        window.openApprovalModal = function() {
       const modal = document.getElementById('hoursApprovalModal');
       const listEl = document.getElementById('approvalRequestsList');
       const adjs = getAdjustments();
@@ -1540,10 +1514,12 @@
 
       if (pendingHours.length === 0 && geofenceAlerts.length === 0) {
         listEl.innerHTML = `
-          <div style="text-align:center; padding:30px 10px; color:var(--text-muted);">
-            <div style="font-size:32px; margin-bottom:10px;">✨</div>
-            <div style="font-weight:700; color:var(--text-main); font-size:15px;">All Caught Up!</div>
-            <div style="font-size:12px; margin-top:4px;">No off-site geofence alerts or hours adjustment requests waiting.</div>
+          <div style="text-align:center; padding:36px 16px; color:var(--text-muted);">
+            <div style="font-size:36px; margin-bottom:12px;">🛡️</div>
+            <div style="font-weight:900; color:#10B981; font-size:16px; letter-spacing:0.5px;">✓ All Clear — No Active Alerts</div>
+            <div style="font-size:12px; color:#94A3B8; margin-top:6px; line-height:1.5;">
+              Your team is operating normally. When any cleaner clocks in/out off-site or submits an adjustment, an immediate alert will appear here and notify your phone.
+            </div>
           </div>
         `;
       } else {
