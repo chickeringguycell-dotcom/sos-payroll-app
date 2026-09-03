@@ -493,45 +493,50 @@
         </div>
       </div>
 
-                  <!-- PANEL B: LOGGED IN (Human Placecard Left, Name Center, Log Out & Big Camera Right) -->
+                        <!-- PANEL B: LOGGED IN (Circle Top Left + Name Beside It + Upload Underneath / Logout Top Right + Camera Underneath) -->
       <div id="panelLoggedIn" style="display:none;">
-        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px;">
           
-          <!-- LEFT SIDE: Human Placecard Photo Frame -->
-          <div style="display:flex; align-items:center; gap:12px;">
-            <div style="display:flex; flex-direction:column; align-items:center;">
-              <div id="empAvatarContainer" style="width:68px; height:68px; min-width:68px; border-radius:12px; border:2px solid var(--gold); box-shadow:0 0 14px rgba(212,175,55,0.4); overflow:hidden; background:linear-gradient(135deg, #1C222E 0%, #10141C 100%); display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer;" onclick="document.getElementById('galleryUploadInput').click()" title="Tap to select photo from phone files">
-                <span id="empAvatarInitials" style="font-size:22px; font-weight:900; color:var(--gold-light);">👤</span>
-                <span id="empAvatarTapLabel" style="font-size:9px; font-weight:700; color:var(--silver); text-transform:uppercase; margin-top:2px;">Photo</span>
+          <!-- LEFT SIDE: Circle Photo + Name Beside It + Upload Button Underneath -->
+          <div style="display:flex; flex-direction:column; gap:10px;">
+            
+            <!-- Circle in top corner + Name Beside It -->
+            <div style="display:flex; align-items:center; gap:12px;">
+              <div id="empAvatarContainer" style="width:60px; height:60px; min-width:60px; border-radius:50%; border:2px solid var(--gold); box-shadow:0 0 14px rgba(212,175,55,0.4); overflow:hidden; background:linear-gradient(135deg, #1C222E 0%, #10141C 100%); display:flex; align-items:center; justify-content:center; cursor:pointer;" onclick="document.getElementById('galleryUploadInput').click()" title="Tap to select photo from phone files">
+                <span id="empAvatarInitials" style="font-size:20px; font-weight:900; color:var(--gold-light);">GC</span>
                 <img id="empAvatarImg" src="" style="width:100%; height:100%; object-fit:cover; display:none;" alt="Profile Photo">
               </div>
-              <label for="galleryUploadInput" style="font-size:10px; font-weight:800; color:var(--gold-light); cursor:pointer; margin-top:4px; display:flex; align-items:center; gap:3px;">
-                📁 Browse File
-              </label>
+
+              <div>
+                <div style="font-size:10px; color:var(--text-muted); font-weight:700; text-transform:uppercase;">👤 Employee Profile</div>
+                <div id="loggedInEmpName" style="font-size:18px; font-weight:900; color:#FFF; margin-top:2px;">Guy Chickering</div>
+                <div id="displayWorksiteContainer" style="margin-top:4px;">
+                  <span id="displayWorksiteBadge" style="font-size:11px; font-weight:700; color:var(--gold); background:rgba(212,175,55,0.15); padding:2px 8px; border-radius:6px; border:1px solid var(--gold); display:none;">
+                    🏢 Worksite
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Under that on the left: Upload from Phone button -->
+            <div>
+              <button type="button" onclick="document.getElementById('galleryUploadInput').click()" class="btn-dark" style="padding:6px 12px; font-size:11px; font-weight:800; color:var(--gold-light); display:inline-flex; align-items:center; gap:6px; border:1px solid var(--gold); border-radius:6px; cursor:pointer; background:rgba(212,175,55,0.08);">
+                <span>📁</span> Upload from Phone
+              </button>
               <input type="file" id="galleryUploadInput" accept="image/*" style="display:none;" onchange="handleEmployeePhotoUpload(event)">
             </div>
 
-            <!-- CENTER: Name & Worksite Information -->
-            <div>
-              <div style="font-size:10px; color:var(--text-muted); font-weight:700; text-transform:uppercase;">👤 Employee Profile</div>
-              <div id="loggedInEmpName" style="font-size:18px; font-weight:900; color:#FFF; margin-top:2px;">--</div>
-              <div id="displayWorksiteContainer" style="margin-top:4px;">
-                <span id="displayWorksiteBadge" style="font-size:11px; font-weight:700; color:var(--gold); background:rgba(212,175,55,0.15); padding:2px 8px; border-radius:6px; border:1px solid var(--gold); display:none;">
-                  🏢 Worksite
-                </span>
-              </div>
-            </div>
           </div>
 
-          <!-- RIGHT SIDE: Log Out Moved Up & Big Easy-to-Push Camera Button Underneath -->
-          <div style="display:flex; flex-direction:column; align-items:flex-end; gap:8px;">
-            <button onclick="handleTimecardLogout()" class="btn-dark" style="padding:4px 10px; font-size:11px; font-weight:800; color:#EF4444; border:1px solid rgba(239,68,68,0.4); border-radius:6px; background:rgba(239,68,68,0.1); cursor:pointer;">
+          <!-- RIGHT SIDE: Log Out on Top + Camera Button Underneath (Exact Same Width) -->
+          <div style="display:flex; flex-direction:column; align-items:stretch; width:110px; min-width:110px; gap:8px;">
+            <button onclick="handleTimecardLogout()" class="btn-dark" style="width:100%; padding:6px 10px; font-size:11px; font-weight:800; color:#EF4444; border:1px solid rgba(239,68,68,0.4); border-radius:6px; background:rgba(239,68,68,0.1); cursor:pointer; text-align:center;">
               🚪 Log Out
             </button>
 
-            <!-- Big Camera Button -->
-            <button type="button" onclick="document.getElementById('cameraCaptureInput').click()" class="btn-gold" style="padding:8px 14px; font-size:13px; font-weight:900; display:inline-flex; align-items:center; gap:6px; border-radius:8px; cursor:pointer; box-shadow:0 0 12px rgba(212,175,55,0.4);">
-              <span style="font-size:16px;">📷</span> Camera
+            <!-- Camera Button (Exact same length/width as logout button) -->
+            <button type="button" onclick="document.getElementById('cameraCaptureInput').click()" class="btn-gold" style="width:100%; padding:6px 10px; font-size:11px; font-weight:900; display:inline-flex; align-items:center; justify-content:center; gap:5px; border-radius:6px; cursor:pointer; box-shadow:0 0 10px rgba(212,175,55,0.3); text-align:center;">
+              <span>📷</span> Take Photo
             </button>
             <input type="file" id="cameraCaptureInput" accept="image/*" capture="user" style="display:none;" onchange="handleEmployeePhotoUpload(event)">
           </div>
