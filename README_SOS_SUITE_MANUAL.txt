@@ -1,56 +1,68 @@
 ================================================================================
-SPOTLESS OFFICE SOLUTIONS LLC — MASTER OPERATIONS MANUAL & SOFTWARE GUIDE
-Apps Covered: SOS Timecard (Employee App) & SOS Payroll (Executive Suite)
-Confidential Business Operating Guide for Managers & Supervisors
-Version 3.6 Enterprise Edition • Real-Time Cloud Sync • Auto-Push Engine Active
+👑 SPOTLESS OFFICE SOLUTIONS LLC
+Enterprise Operations Manual & Software Master Guide
+Apps Covered: SOS Timecard (Employee Portal) & SOS Payroll (Executive Suite)
+Target Audience: Studio Owners, Operations Managers, Payroll Administrators & Team Supervisors
+Version: 3.6 Enterprise Edition • 100% Cloud-Synced & Mobile Ready • Golden Rule Active
 ================================================================================
 
-LIVE APP WEB ADDRESSES:
+LIVE APPLICATION WEB ADDRESSES:
 --------------------------------------------------------------------------------
-1. ⏱️ SOS Timecard App (Cleaner Phone):
+⏱️ SOS Timecard App (Cleaner Mobile Phone):
    https://chickeringguycell-dotcom.github.io/sos-payroll-app/timecard/
 
-2. 💰 SOS Payroll Executive Suite (Manager / Owner):
+💰 SOS Payroll App (Executive Management Suite):
    https://chickeringguycell-dotcom.github.io/sos-payroll-app/
 
-3. 📖 Interactive Visual Manual (Printable):
+📖 Interactive Visual Manual (Printable with Satellite Maps):
    https://chickeringguycell-dotcom.github.io/sos-payroll-app/SOS_OPERATIONS_MANUAL.html
 
 ================================================================================
-TABLE OF CONTENTS
+📑 TABLE OF CONTENTS
 ================================================================================
-1. Quick Start & Dual-App Overview
-2. How Updates & 3D Icons Are Auto-Pushed to Phones & PCs
-3. Client Contracts & Numbered Worksites (#01 to #20+)
-4. Assigning Cleaners to Worksite Locations
-5. Dual GPS Geofence Verification (Clock-In & Clock-Out Rules)
+1. Executive Overview & Dual-App Architecture
+2. How Updates & 3D Icons Are Delivered to Phones & PCs
+3. Client Contracts & Numbered Worksites Manager (#01 to #20+)
+4. Team Management, Worksite Assignment & Profile Rules
+5. Dual GPS Geofence Verification & Real-Time Alert Engine
 6. Timecard App: Employee Field Guide
-7. Hours Calculation & $5,000 Emergency Reserve Policy
+7. Payroll Engine, Hours Calculation & $5,000 Emergency Reserve Policy
 8. 1-Click Emergency Fund Release & Spendable Cash Allocation
 9. The Golden Rule: Automated Email Audits (sos.cleaning@outlook.com)
-10. Government Tax Vault Breakdown (WA State & Federal)
-11. Generating & Emailing Paystubs
-12. Former Employees Archive Vault (Terminate & Rehire)
-13. Automated Bank Direct Deposit (ACH / NACHA & Plaid)
-14. Support & Troubleshooting
+10. Tax Vault & Deductions Breakdown (WA State & Federal)
+11. Itemized Paystubs & Email Distribution
+12. Former & Inactive Employees Archive Vault (Terminate & Rehire)
+13. Automated Bank Direct Deposit Architecture (ACH / NACHA & Plaid)
+14. Quick Troubleshooting & Support Procedures
 
 ================================================================================
-1. QUICK START & DUAL-APP OVERVIEW
+1. EXECUTIVE OVERVIEW & DUAL-APP ARCHITECTURE
 ================================================================================
-Spotless Office Solutions uses two synchronized applications:
+Spotless Office Solutions operates a custom, private two-app ecosystem engineered
+to make field cleaning operations and executive payroll effortless:
 
-• SOS Timecard: Cleaners use this on their Apple iPhones or Android phones. They log in with their Date of Birth, see their assigned building, and tap Clock In / Clock Out.
-• SOS Payroll: Managers use this to monitor live shifts, approve hours, calculate taxes, manage client contracts, and disperse direct deposit paychecks.
++-----------------------------+               +-----------------------------+
+|      ⏱️ SOS TIMECARD         |   Real-Time   |       💰 SOS PAYROLL         |
+|   Cleaner Mobile Portal     | <-----------> |  Executive Operating Suite  |
+|  • 1-Tap DOB Login          |  Cloud Sync   |  • Bank & Cash Reserves     |
+|  • Satellite GPS Ping       |  (Zero Delay) |  • Tax Vaults & 1-Click ACH |
+|  • Live Shift Timer         |               |  • Numbered Contracts & Roster|
++-----------------------------+               +-----------------------------+
 
-Both apps talk to each other in real-time. When a cleaner punches in or out, their hours and GPS verification appear instantly in SOS Payroll.
+THE TWO CORE APPLICATIONS:
+• ⏱️ SOS Timecard App (/timecard/):
+  Used by cleaners on their Apple iPhones or Android devices.
+  1-tap PIN/DOB login, assigned worksite indicator, active live shift timer, and automated GPS location verification on both clock-in and clock-out.
+
+• 💰 SOS Payroll App (/):
+  Used by Owners and Payroll Managers on laptop, tablet, or phone.
+  Manages live business checking cash, $5,000 untouchable cushion, team rosters, wage calculations, tax vaults, numbered contracts, geofence alerts, and direct deposit batch dispersal.
 
 ================================================================================
-2. HOW UPDATES & 3D ICONS ARE AUTO-PUSHED TO PHONES & PCS
+2. HOW UPDATES & 3D ICONS ARE DELIVERED TO PHONES & PCS
 ================================================================================
-How do you and your cleaners receive new features, bug fixes, and updated 3D icons?
-
 A. AUTOMATIC BACKGROUND DETECTION:
-Whenever anyone opens the app or returns to their browser tab, the built-in Service Worker silently checks for updates in the background in 1–2 seconds.
+Whenever anyone opens the app or switches to their browser tab, the built-in Service Worker silently checks for updates in the background in 1–2 seconds.
 
 B. FLOATING "UPDATE READY" NOTIFICATION BANNER:
 When a new update is ready, a glowing gold banner appears across the top of the screen:
@@ -63,80 +75,105 @@ C. REOPENING THE APP:
 If an employee closes and reopens the app, it automatically launches straight into the fresh version without requiring any manual downloads.
 
 D. UPDATING MOBILE HOME SCREEN ICONS:
-Modern phones (iPhone Safari & Android Chrome) update the cached web app icons automatically. To force an immediate refresh on a phone's home screen grid, cleaners can tap the "📲 Download App" banner inside the app.
+Modern phones (iPhone Safari & Android Chrome) update the cached web app icons automatically. Cleaners can also tap the "📲 Download App" banner inside the app to refresh their home screen icon anytime.
 
 ================================================================================
-3. CLIENT CONTRACTS & NUMBERED WORKSITES (#01 to #20+)
+3. CLIENT CONTRACTS & NUMBERED WORKSITES MANAGER (#01 to #20+)
 ================================================================================
-Every commercial client facility is assigned a distinct Site Number (#01 to #20+) to prevent cleaner confusion and ensure GPS tracking accuracy.
+To prevent cleaner confusion and ensure accurate GPS tracking, every facility is assigned a distinct Site Number (#01 to #20+).
 
-HOW TO ADD A NEW CONTRACT:
+HOW TO ADD OR MANAGE A CONTRACT:
 1. In SOS Payroll, scroll to "🏢 Client Contracts, Worksites & Geofence Accounts".
 2. Click "+ Add Contract / Site".
-3. Enter:
-   - Site Number Tag (e.g. Site #01, Site #02)
-   - Contract / Facility Name (e.g. Apex Medical Center)
-   - Physical Street Address (e.g. 100 Main St, Seattle, WA) -> Used for GPS coordinates
-   - Site Phone Number & Contact Manager (e.g. Dr. Roberts)
-   - Geofence Radius (Default: 0.15 Miles / ~800 ft standard lot)
-4. Click "Save Changes".
+3. Fill out the contract details:
+   - Site # Tag: e.g., Site #01, Site #02, etc.
+   - Contract / Facility Name: (e.g., Apex Medical Center, Omni Commercial Tower).
+   - Physical Street Address: (e.g., 100 Main St, Seattle, WA 98101). Must be accurate for GPS geofence matching.
+   - Site Phone Number: Direct facility telephone contact.
+   - Primary Contact / Manager: (e.g., Dr. Roberts, Property Manager).
+   - Geofence Radius: Allowed boundary (Default: 0.15 mi / ~800 ft standard commercial lot).
+4. Click "💾 Create Contract Site".
 
-DELETING OLD CONTRACTS:
-Click the 🗑️ (Trash Can) on any contract row. It cleanly removes the building while safely reverting assigned cleaners to "Floating" status without deleting their profiles.
-
-================================================================================
-4. ASSIGNING CLEANERS TO WORKSITE LOCATIONS
-================================================================================
-1. In SOS Payroll, click "✏️ Edit" on any team member in the Team Roster.
-2. In the "🏢 Assigned Worksite Location" dropdown, select from your numbered list:
-   - [Site #01] Apex Medical Center - 100 Main St (Tel: 206-555-0199)
-   - [Site #02] Omni Commercial Tower - 500 Broadway
-   - ... up to 20+ sites
-3. Click "Save Team Member".
-4. The cleaner's phone will immediately display their assigned building!
+DELETING EXPIRED OR TERMINATED CONTRACTS:
+1. Click the 🗑️ (Trash Can) on any contract row.
+2. Confirm deletion. The facility is safely removed, and any cleaner assigned to that location will automatically revert to Floating without losing their profile.
 
 ================================================================================
-5. DUAL GPS GEOFENCE VERIFICATION (CLOCK-IN & CLOCK-OUT RULES)
+4. TEAM MANAGEMENT, WORKSITE ASSIGNMENT & PROFILE RULES
 ================================================================================
-The app verifies physical satellite GPS presence on BOTH punch events:
+ADDING A NEW TEAM MEMBER:
+1. Click "+ Add Employee" in the Team section.
+2. Enter the employee's information:
+   - Full Name & Role / Position (e.g., Lead Commercial Cleaner).
+   - Date of Birth (DOB): Used for secure 1-tap Timecard login.
+   - Hourly Pay Rate ($): e.g., $23.50/hr.
+   - Direct Deposit Information: Bank Name, 9-Digit Routing Number, Checking Account Number.
+   - 📅 Official Hire Date: Selected within the 100-year window (1960–2060).
+   - 🏢 Assigned Worksite Location: Select from your numbered list (e.g., [Site #01] Apex Medical Center).
+3. Click "💾 Save Team Member".
 
-A. CLOCK-IN PUNCH:
-   • On-Site (Within 800 ft): Clean punch logged ("📍 On-Site [Site #01]").
-   • Off-Site (>0.15 mi away): Flashes warning on cleaner screen and sends an INSTANT GEOFENCE ALERT to SOS Payroll and sos.cleaning@outlook.com showing distance (e.g. "Sarah Jane clocked in 5.2 miles away from Site #01").
+================================================================================
+5. DUAL GPS GEOFENCE VERIFICATION & REAL-TIME ALERT ENGINE
+================================================================================
+The Timecard app uses Dual GPS Verification to eliminate buddy-punching, early departures, and false hour claims.
 
-B. CLOCK-OUT PUNCH (DEPARTURE VERIFICATION):
-   • On-Site (At the building): Clean shift closed.
-   • Off-Site (e.g. Left early, drove home, and clocked out from their house): Flags "🚨 Off-Site Clock-Out: Left job site before punching (8.1 mi away)" and alerts SOS Payroll and email!
+HOW THE GPS VERIFICATION WORKS:
+--------------------------------------------------------------------------------
+Action     | Condition                   | App Reaction             | Manager Reaction
+-----------+-----------------------------+--------------------------+----------------------------
+Clock-In   | On-Site (Within 800 ft)     | Records punch cleanly:   | Zero interruption; clean
+           |                             | 📍 On-Site [Site #01]    | hour accrual.
+-----------+-----------------------------+--------------------------+----------------------------
+Clock-In   | Off-Site (e.g. 5.2 mi away) | Flashes alert on screen; | 🚨 Red Bell Alert in SOS
+           |                             | logs satellite GPS coords| Payroll & Email sent!
+-----------+-----------------------------+--------------------------+----------------------------
+Clock-Out  | On-Site (At facility)       | Closes shift cleanly;    | Shift automatically ready
+           |                             | logs total shift hours.  | for payroll approval.
+-----------+-----------------------------+--------------------------+----------------------------
+Clock-Out  | Off-Site (e.g. Clocking     | Records departure coords | 🚨 Red Bell Alert in SOS
+           | from home 8.1 miles away)   | and flags off-site exit. | Payroll & Email sent!
+--------------------------------------------------------------------------------
 
-ACKNOWLEDGING ALERTS IN PAYROLL:
-The top bell icon will illuminate in red ("🔔 [1] Alerts"). Click it to view the incident card (Employee Name, Incident Type, Distance Off-Site, Time, and GPS Coords) and click "✓ Acknowledge & Approve".
+ACKNOWLEDGING GEOFENCE ALERTS IN SOS PAYROLL:
+1. When an off-site punch occurs, the top header displays "🔔 [1] Alerts" in illuminated red.
+2. Click "🔔 Alerts" to open the Timecard Approvals & Geofence Incident Queue.
+3. Review the card:
+   - Cleaner Name
+   - Incident Type (Clock-In vs Clock-Out)
+   - Distance Off-Site (e.g., 5.24 miles)
+   - Exact Time & Physical Address vs Assigned Site Address
+4. Click "✓ Acknowledge & Approve" or adjust shift hours as needed.
 
 ================================================================================
 6. TIMECARD APP: EMPLOYEE FIELD GUIDE
 ================================================================================
-Share these 3 steps with cleaners:
-1. Open the Timecard app on phone.
-2. Tap your name and enter your Date of Birth (MM/DD/YYYY).
-3. Tap "⏱️ Clock In" when arriving, "☕ Lunch Break" for meal break, and "🏁 Clock Out" when shift finishes.
+Share these 3 simple steps with cleaners:
 
-*Indoor GPS Note: If working in a basement with weak satellite signal, the app automatically falls back to Wi-Fi/cellular triangulation so cleaners are never locked out.
+1. Open the App: Open SOS Timecard on your phone (or tap the gold home screen icon).
+2. Sign In: Tap your name from the roster and enter your Date of Birth (MM/DD/YYYY).
+3. Punch Shift:
+   - When arriving at the building, tap "⏱️ Clock In" (Allow location permissions if prompted).
+   - When taking lunch, tap "☕ Start Lunch Break".
+   - When shift is completed at the building, tap "🏁 Clock Out".
+
+TIP: No Signal / Indoor Wi-Fi Fallback: If a cleaner is in a basement or thick concrete building with weak satellite GPS, the app seamlessly falls back to Wi-Fi/cellular triangulation so they are never locked out from punching their shift.
 
 ================================================================================
-7. HOURS CALCULATION & $5,000 EMERGENCY BUSINESS RESERVE POLICY
+7. PAYROLL ENGINE, HOURS CALCULATION & $5,000 EMERGENCY BUSINESS RESERVE
 ================================================================================
 STRICT BUSINESS POLICY ON THE $5,000 CUSHION:
-The $5,000 Cushion is not personal spending money for the owners—it is the Dedicated Emergency Business & Payroll Reserve.
+The $5,000 Cushion is not personal spending money for the owners—it is the Dedicated Emergency Business Operating & Payroll Reserve.
 
 AUTHORIZED USES:
-1. Guaranteed Cleaner Payroll Backstop: If client payments are delayed or cash is temporarily tight, cleaner wages can be drawn directly from this $5,000 reserve so no employee ever misses a paycheck.
-2. Crucial Job Site Equipment & Supplies: Buying essential supplies that cannot wait (trash bags, trash cans, mop heads, commercial vacuums, cleaning chemicals).
-3. Emergency Facility Needs: Equipment repairs or urgent job site needs.
+1. Guaranteed Cleaner Payroll Backstop: If client payments are pending or business cash is temporarily tight, cleaner wages can be drawn directly from this $5,000 reserve so no employee ever misses a paycheck.
+2. Crucial Job Site Equipment & Must-Have Supplies: Buying essential cleaning supplies (trash bags, trash cans, floor chemicals, commercial vacuums, mop heads) that cannot wait.
+3. Emergency Worksite Repairs & Business Operations: Equipment breakdowns or urgent on-site client needs.
 
 STRICTLY PROHIBITED:
-• Zero Personal Withdrawals: Neither owner may pull from this $5,000 reserve for personal expenses (no sodas, personal lunches, home furniture, or non-business items). It must remain standing in the business account.
+• Zero Personal Withdrawals: Neither owner may pull from this $5,000 reserve for personal expenses (no sodas, personal lunches, home furniture, or non-business shopping). It must remain standing in the business account.
 
 FREE & CLEAR CASH FORMULA:
-Free Operating Cash = Bank Balance minus Net Payroll Due minus Taxes Accrued minus $5,000 Emergency Reserve.
+Free & Clear Operating Cash = Bank Checking Balance - Net Payroll Due - Taxes Accrued - $5,000 Emergency Reserve
 
 ================================================================================
 8. 1-CLICK EMERGENCY FUND RELEASE & SPENDABLE CASH ALLOCATION
@@ -144,9 +181,9 @@ Free Operating Cash = Bank Balance minus Net Payroll Due minus Taxes Accrued min
 When emergency funds are needed for payroll or urgent supplies:
 1. In SOS Payroll, locate the "🔓 Need to Pay an Employee or Buy Urgent Supplies?" bar.
 2. Click "🔓 Release Funds to Spendable Cash".
-3. Enter the amount to release (e.g. $350.00).
+3. Enter the dollar amount needed (e.g., $350.00).
 4. Select the Purpose:
-   - Emergency Cleaner Payroll Backstop
+   - Emergency Cleaner Payroll Backstop (Client invoice pending)
    - Crucial Job Site Supplies (Trash bags, mop heads, chemicals)
    - Commercial Equipment & Vacuums (Breakdown replacement)
    - Emergency Facility Worksite Need
@@ -172,50 +209,89 @@ GOLDEN RULE: Every action across both apps automatically generates an audit reco
 *Live Audit Log: Scroll to the bottom of SOS Payroll to view the "Live Business Audit Trail & Email Ledger" or click "Export Audit Log (.CSV)" to download a full spreadsheet copy.
 
 ================================================================================
-10. GOVERNMENT TAX VAULT BREAKDOWN (WA STATE & FEDERAL)
+10. TAX VAULT & DEDUCTIONS BREAKDOWN (WA STATE & FEDERAL)
 ================================================================================
-Taxes are automatically calculated on every payroll run:
-1. WA L&I Workers' Comp (Class 6602 Janitorial): $1.75 / hour composite (Quarterly filing via secure.lni.wa.gov).
-2. Federal IRS (Form 941/940): 6.2% Social Security + 1.45% Medicare + FUTA (Monthly/Quarterly via EFTPS.gov).
-3. WA ESD (PFML & CARES): 0.74% Paid Family Leave + 0.58% WA Cares (Quarterly via paidleave.wa.gov).
-4. WA DOR (B&O Tax): 1.50% of gross commercial revenue (Quarterly via secure.dor.wa.gov).
+SOS Payroll calculates all statutory employer and employee tax withholdings automatically on every payroll cycle:
+
+--------------------------------------------------------------------------------
+Government Agency                | Form / Risk Class       | Rate / Formula
+---------------------------------+-------------------------+--------------------
+1. WA Dept of Labor & Industries | Class 6602 (Janitorial) | $1.75 / hour composite
+2. Internal Revenue Service (IRS)| Form 941 & 940 (FICA)   | 6.2% SS + 1.45% Med + FUTA
+3. WA Employment Security (ESD)  | PFML & WA CARES         | 0.74% PFML + 0.58% Cares
+4. WA Dept of Revenue (DOR)      | B&O Tax                 | 1.50% Gross Revenue
+--------------------------------------------------------------------------------
 
 ================================================================================
-11. GENERATING & EMAILING PAYSTUBS
+11. ITEMIZED PAYSTUBS & EMAIL DISTRIBUTION
 ================================================================================
-1. In SOS Payroll, click "⚡ Pay All & Transmit Direct Deposit".
-2. Click "📧 Email All Stubs".
-3. Cleaners receive an itemized, bank-grade paystub detailing gross pay, line-by-line tax withholdings, and net direct deposit. All copies are archived to sos.cleaning@outlook.com.
+Every employee receives a comprehensive, bank-grade paystub:
+
+WHAT APPEARS ON THE OFFICIAL PAYSTUB:
+• Company Letterhead: SPOTLESS OFFICE SOLUTIONS LLC — Commercial Janitorial Services.
+• Employee Details: Name, Position, Pay Period Dates, Check Date.
+• Earnings Table: Regular Hours, Hourly Rate, Gross Earnings.
+• Itemized Deductions: Federal Income Tax, Social Security, Medicare, WA PFML, WA CARES, WA L&I.
+• Net Direct Deposit Summary: Deposited directly into their Bank Account (Account # masked for security: *****1234).
+• 1-Click Email: Click "📧 Email Paystub" to send a clean PDF-formatted copy directly to the cleaner.
 
 ================================================================================
-12. FORMER EMPLOYEES ARCHIVE VAULT (TERMINATE & REHIRE)
+12. FORMER & INACTIVE EMPLOYEES ARCHIVE VAULT (TERMINATE & REHIRE)
 ================================================================================
-Never delete an employee permanently—archive them to preserve audit trails!
+When an employee is separated, they must never be permanently deleted so that historical tax and wage audit trails remain intact.
 
-TERMINATING / ARCHIVING:
-1. Click the 🗑️ button on an employee's row in the Team Roster.
-2. Select Departure Date and Category (Fired - Attendance, Fired - Performance, Layoff, Resignation, or Inactive) and enter reason notes.
-3. Click "Confirm & Move to Vault".
-4. The employee is moved to the "Former Employees Vault". All lifetime wages, hours, hire/fired dates, and banking info remain 100% preserved.
+TERMINATING / ARCHIVING AN EMPLOYEE:
+1. In the Team Roster, click the 🗑️ button on their row.
+2. Select the Termination / Departure Date.
+3. Choose the Departure Category:
+   - 🔴 Fired - Attendance / No-Show / Tardy
+   - 🔴 Fired - Performance / Cleanliness Standard
+   - 🔴 Fired - Company Policy / Misconduct
+   - ⚪ Voluntary Resignation / Quit
+   - 🔵 End of Contract / Seasonal Layoff
+   - ⚪ Other
+4. Enter specific notes (e.g., "Failed to report for scheduled shift at Site #01").
+5. Click "🗑️ Confirm & Move to Vault".
 
-REHIRING / REACTIVATING:
-In the Former Employees Vault table, click "♻️ Reactivate / Rehire" to restore the cleaner straight back to active payroll in 1 click!
+REACTIVATING / REHIRING A FORMER EMPLOYEE:
+1. Scroll down to "🗄️ Former & Inactive Employees Archive Vault".
+2. Locate the person in the table.
+3. Click "♻️ Reactivate / Rehire".
+4. Confirm rehire. The cleaner is immediately restored to the active team roster with their pay rate and banking details ready for the next shift!
 
 ================================================================================
-13. AUTOMATED BANK DIRECT DEPOSIT (ACH / NACHA & PLAID)
+13. AUTOMATED BANK DIRECT DEPOSIT ARCHITECTURE (ACH / NACHA & PLAID)
 ================================================================================
-HOW AUTOMATED BANK DISPERSAL WORKS:
-1. When you click "⚡ Pay All & Transmit Direct Deposit" in SOS Payroll, click "📥 Download .ACH".
-2. The app automatically creates a standard Universal NACHA (.ACH) Direct Deposit Batch File.
-3. Upload this .ach file into your Qualstar Bank Business Treasury portal—the bank immediately disperses net wages into every employee's checking account with ZERO monthly per-employee payroll fees!
-4. Direct Bank API Link (Plaid / Open Banking) is also built-in for instant 1-click push when credentials are linked.
+To achieve 100% automated direct deposits directly into cleaner bank accounts without paying payroll processor monthly fees, the system is engineered around the universal NACHA (National Automated Clearing House Association) Standard:
+
+HOW AUTOMATED DISPERSAL WORKS:
+1. The Bank Account Link:
+   When your business checking account is opened at Qualstar Bank (or any US commercial bank), the bank provides an ACH Direct Deposit Originator ID (your 9-digit Company Tax ID / EIN).
+2. 1-Click Approval Batch Generation:
+   When you click "⚡ Pay All & Transmit Direct Deposit" in SOS Payroll:
+   The app compiles all net wages into an encrypted NACHA .ach Direct Deposit Batch File containing exact routing numbers, account numbers, and net dollar amounts for each employee.
+3. Automated Bank Transmission:
+   - Option A (Direct Treasury Transmission): Upload the generated .ach file directly into Qualstar's Business Online Treasury portal (funds disperse overnight with zero per-employee processing fees).
+   - Option B (Instant API Dispersal via Plaid / Dwolla): Connects via bank API to trigger immediate push transfers to employee accounts within seconds.
 
 ================================================================================
-14. SUPPORT & TROUBLESHOOTING
+14. QUICK TROUBLESHOOTING & SUPPORT PROCEDURES
 ================================================================================
-• Cleaner says "App says I'm off-site": Increase geofence radius in Worksites Manager from 0.15 mi to 0.25 mi to accommodate large parking lots.
-• Live Updates: The app features an Instant Auto-Live Update engine—pulling down on the screen automatically refreshes all new code without losing data.
-• Historical Tax Inquiries: Access former cleaner stubs anytime in the Former Employees Archive Vault.
+--------------------------------------------------------------------------------
+Issue                           | Cause                   | Solution
+--------------------------------+-------------------------+---------------------
+Cleaner says "App says I'm      | Phone GPS calibration   | Step near window/entrance
+off-site but I'm in the lobby"  | or concrete shielding.  | or increase site radius to 0.25 mi.
+--------------------------------+-------------------------+---------------------
+New features or logo not visible| Stale browser cache.    | Pull down on screen to refresh
+on phone                        |                         | (Auto-Live engine updates).
+--------------------------------+-------------------------+---------------------
+Former employee wants their     | Employee is in Vault.   | Go to 🗄️ Former Vault &
+past tax stubs                  |                         | print historical paystubs.
+--------------------------------+-------------------------+---------------------
+Need to reassign cleaner to a   | Shift schedule changed. | Click ✏️ Edit on cleaner ->
+different building              |                         | select new worksite -> Save.
+--------------------------------------------------------------------------------
 
-Spotless Office Solutions LLC • Confidential Operations Manual
+Spotless Office Solutions LLC • Confidential Commercial Operating Manual
 ================================================================================
