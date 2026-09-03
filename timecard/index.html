@@ -793,7 +793,7 @@
     // ==========================================
     // THE MASTER MORPHING BUTTON ACTION HANDLER
     // ==========================================
-        function handleMasterPunch() {
+            function handleMasterPunch() {
       const empName = getActiveName();
       if (!empName) {
         alert('Please enter your name first.');
@@ -803,42 +803,42 @@
       const active = punchState.activePunches[empName];
       const now = new Date();
       const assignedSite = getAssignedWorksite(empName);
+      const btn = document.getElementById('btnMasterPunch');
+      const textEl = document.getElementById('masterPunchText');
+      const iconEl = document.getElementById('masterPunchIcon');
 
       if (!active) {
-        // -----------------------------
-        // 🟢 TRANSITION: CLOCK IN NOW
-        // -----------------------------
-        const btn = document.getElementById('btnMasterPunch');
-        const text = document.getElementById('masterPunchText');
-        const icon = document.getElementById('masterPunchIcon');
-        if (text) text.innerText = '📡 Pinging GPS Location...';
-        if (icon) icon.innerText = '📡';
+        // ------------------------------------
+        // 🟢 CLOCK IN: VISIBLE GPS PING FLOW
+        // ------------------------------------
+        if (btn) {
+          btn.disabled = true;
+          btn.style.opacity = '0.9';
+          btn.style.background = 'linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%)';
+          btn.style.boxShadow = '0 0 20px rgba(59,130,246,0.6)';
+        }
+        if (iconEl) iconEl.innerText = '📡';
+        if (textEl) textEl.innerText = 'Pinging your GPS location...';
 
-        punchState.activePunches[empName] = {
-          employee: empName,
-          clockInTime: now.getTime(),
-          clockInDateStr: now.toLocaleDateString('en-US'),
-          clockInTimeStr: now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }),
-          isOffSite: false,
-          locationStr: '📡 Pinging GPS Location...'
-        };
-
-        savePunchState();
-        renderView();
-
-        const processLocation = (userLat, userLng) => {
+        const finalizeClockIn = (userLat, userLng) => {
           const distanceMiles = calculateDistanceMiles(userLat, userLng, assignedSite.lat, assignedSite.lng);
           const radius = assignedSite.radiusMiles || 0.095; // 500 feet
           const isOff = distanceMiles > radius;
 
-          if (punchState.activePunches[empName]) {
-            punchState.activePunches[empName].isOffSite = isOff;
-            punchState.activePunches[empName].locationStr = isOff 
-              ? `⚠️ ${distanceMiles.toFixed(1)} mi off-site (${userLat.toFixed(3)}, ${userLng.toFixed(3)})`
-              : `✓ On-Site (${assignedSite.name})`;
-            savePunchState();
-            renderView();
-          }
+          punchState.activePunches[empName] = {
+            employee: empName,
+            clockInTime: now.getTime(),
+            clockInDateStr: now.toLocaleDateString('en-US'),
+            clockInTimeStr: now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }),
+            isOffSite: isOff,
+            locationStr: isOff 
+              ? `${distanceMiles.toFixed(1)} mi off-site (${userLat.toFixed(3)}, ${userLng.toFixed(3)})`
+              : `✓ On-Site (${assignedSite.name})`
+          };
+
+          savePunchState();
+          if (btn) btn.disabled = false;
+          renderView();
 
           if (isOff) {
             const geoAlert = {
@@ -867,55 +867,62 @@
             if (syncChannel) {
               syncChannel.postMessage({ type: 'GEOFENCE_ALERT', alert: geoAlert });
             }
+            broadcastToCloudBus(geoAlert);
           }
         };
 
         if (navigator.geolocation) {
           navigator.geolocation.getCurrentPosition(
-            (pos) => {
-              processLocation(pos.coords.latitude, pos.coords.longitude);
-            },
-            (err) => {
-              // Default fallback to Western WA GPS if location blocked or timed out
-              processLocation(47.6101, -122.2015);
-            },
-            { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+            (pos) => finalizeClockIn(pos.coords.latitude, pos.coords.longitude),
+            (err) => finalizeClockIn(47.6101, -122.2015),
+            { enableHighAccuracy: true, timeout: 4000, maximumAge: 0 }
           );
         } else {
-          processLocation(47.6101, -122.2015);
+          finalizeClockIn(47.6101, -122.2015);
         }
 
       } else {
-        // -----------------------------
-        // 🔴 TRANSITION: CLOCK OUT NOW
-        // -----------------------------
-        const diffHours = Math.max(0.01, (now.getTime() - active.clockInTime) / 3600000);
-        const roundedHours = Math.round(diffHours * 100) / 100;
+        // ------------------------------------
+        // 🔴 CLOCK OUT: VISIBLE GPS PING FLOW
+        // ------------------------------------
+        if (btn) {
+          btn.disabled = true;
+          btn.style.opacity = '0.9';
+          btn.style.background = 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)';
+          btn.style.boxShadow = '0 0 20px rgba(245,158,11,0.6)';
+        }
+        if (iconEl) iconEl.innerText = '📡';
+        if (textEl) textEl.innerText = 'Pinging your GPS location...';
 
-        const completedPunch = {
-          id: 'punch-' + Date.now(),
-          employee: empName,
-          date: now.toISOString().split('T')[0],
-          dateStr: now.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }),
-          clockIn: active.clockInTimeStr,
-          clockOut: now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }),
-          hours: roundedHours,
-          locationStr: active.locationStr || ('Site: ' + assignedSite.name),
-          isOffSite: active.isOffSite || false,
-          timestamp: now.getTime()
-        };
-
-        punchState.history.unshift(completedPunch);
-        delete punchState.activePunches[empName];
-        savePunchState();
-
-        syncHoursToPayroll(empName, roundedHours);
-        renderView();
-
-        const processExitLocation = (userLat, userLng) => {
+        const finalizeClockOut = (userLat, userLng) => {
+          const diffHours = Math.max(0.01, (now.getTime() - active.clockInTime) / 3600000);
+          const roundedHours = Math.round(diffHours * 100) / 100;
           const distanceMiles = calculateDistanceMiles(userLat, userLng, assignedSite.lat, assignedSite.lng);
           const radius = assignedSite.radiusMiles || 0.095; // 500 feet
           const isOff = distanceMiles > radius;
+
+          const completedPunch = {
+            id: 'punch-' + Date.now(),
+            employee: empName,
+            date: now.toISOString().split('T')[0],
+            dateStr: now.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }),
+            clockIn: active.clockInTimeStr,
+            clockOut: now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }),
+            hours: roundedHours,
+            locationStr: isOff 
+              ? `${distanceMiles.toFixed(1)} mi off-site` 
+              : `On-Site (${assignedSite.name})`,
+            isOffSite: isOff,
+            timestamp: now.getTime()
+          };
+
+          punchState.history.unshift(completedPunch);
+          delete punchState.activePunches[empName];
+          savePunchState();
+
+          syncHoursToPayroll(empName, roundedHours);
+          if (btn) btn.disabled = false;
+          renderView();
 
           if (isOff) {
             const geoAlert = {
@@ -944,21 +951,18 @@
             if (syncChannel) {
               syncChannel.postMessage({ type: 'GEOFENCE_ALERT', alert: geoAlert });
             }
+            broadcastToCloudBus(geoAlert);
           }
         };
 
         if (navigator.geolocation) {
           navigator.geolocation.getCurrentPosition(
-            (pos) => {
-              processExitLocation(pos.coords.latitude, pos.coords.longitude);
-            },
-            (err) => {
-              processExitLocation(47.6101, -122.2015);
-            },
-            { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+            (pos) => finalizeClockOut(pos.coords.latitude, pos.coords.longitude),
+            (err) => finalizeClockOut(47.6101, -122.2015),
+            { enableHighAccuracy: true, timeout: 4000, maximumAge: 0 }
           );
         } else {
-          processExitLocation(47.6101, -122.2015);
+          finalizeClockOut(47.6101, -122.2015);
         }
       }
     }
