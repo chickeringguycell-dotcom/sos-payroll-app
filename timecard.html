@@ -493,12 +493,12 @@
         </div>
       </div>
 
-                                                      <!-- PANEL B: LOGGED IN (Name Top Left, Square Photo Bottom Left, 3 Buttons Far Right) -->
+                                                            <!-- PANEL B: LOGGED IN (Name Top Left, Square Photo Bottom Left, 3 Evenly Spaced Buttons Far Right) -->
       <div id="panelLoggedIn" style="display:none;">
-        <div style="display:flex; justify-content:space-between; align-items:flex-end; gap:12px; width:100%;">
+        <div style="display:flex; justify-content:space-between; align-items:stretch; gap:14px; width:100%;">
           
           <!-- LEFT SIDE: Name & Worksite on Top, Square Photo Frame on Bottom Left -->
-          <div style="display:flex; flex-direction:column; align-items:flex-start; gap:10px; min-width:0; flex-shrink:1;">
+          <div style="display:flex; flex-direction:column; align-items:flex-start; justify-content:space-between; gap:10px; min-width:0; flex-shrink:1;">
             
             <!-- Top Left: Employee Name & Worksite Badge -->
             <div>
@@ -519,8 +519,8 @@
 
           </div>
 
-          <!-- RIGHT SIDE: All 3 Buttons Firmly Anchored to the Far Right Margin -->
-          <div style="display:flex; flex-direction:column; align-items:flex-end; margin-left:auto; flex-shrink:0; gap:5px;">
+          <!-- RIGHT SIDE: All 3 Buttons Evenly Spaced from Top to Bottom -->
+          <div style="display:flex; flex-direction:column; justify-content:space-between; align-items:flex-end; align-self:stretch; margin-left:auto; flex-shrink:0; min-height:128px; gap:8px;">
             
             <!-- Button 1 (Top): Log Out -->
             <button onclick="handleTimecardLogout()" class="btn-dark" style="width:138px; min-width:138px; height:32px; min-height:32px; padding:0 8px; font-size:11px; font-weight:800; color:#EF4444; border:1px solid rgba(239,68,68,0.4); border-radius:6px; background:rgba(239,68,68,0.1); cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:6px; box-sizing:border-box;">
