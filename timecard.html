@@ -510,7 +510,7 @@
       <!-- THE SINGLE MASTER MORPHING BUTTON -->
       <button id="btnMasterPunch" class="btn-action-punch btn-clock-in" onclick="handleMasterPunch()">
         <span id="masterPunchIcon">▶</span>
-        <span id="masterPunchText">CLOCK IN / SIGN IN</span>
+        <span id="masterPunchText">CLOCK IN</span>
       </button>
     </div>
 
@@ -793,39 +793,48 @@
     // ==========================================
     // THE MASTER MORPHING BUTTON ACTION HANDLER
     // ==========================================
-                function handleMasterPunch() {
+                    let isPunchInProgress = false;
+
+    function handleMasterPunch() {
+      if (isPunchInProgress) return;
+      
       const empName = getActiveName();
       if (!empName) {
         alert('Please enter your name first.');
         return;
       }
 
+      isPunchInProgress = true;
       const active = punchState.activePunches[empName];
       const now = new Date();
-      const assignedSite = getAssignedWorksite(empName);
+      const assignedSite = getEmployeeWorksite(empName);
       const btn = document.getElementById('btnMasterPunch');
       const textEl = document.getElementById('masterPunchText');
       const iconEl = document.getElementById('masterPunchIcon');
 
+      // -----------------------------------------------------------
+      // STEP 1: IMMEDIATELY SET BUTTON TEXT TO 'Pinging your GPS location...'
+      // -----------------------------------------------------------
+      if (btn) {
+        btn.disabled = true;
+        btn.style.opacity = '1.0';
+        btn.style.background = 'linear-gradient(135deg, #1D4ED8 0%, #0284C7 100%)';
+        btn.style.boxShadow = '0 0 25px rgba(2,132,199,0.8)';
+        btn.style.color = '#FFFFFF';
+        btn.style.borderColor = '#38BDF8';
+      }
+      if (iconEl) iconEl.innerText = '📡';
+      if (textEl) textEl.innerText = 'Pinging your GPS location...';
+
+      const startTime = Date.now();
+
       if (!active) {
-        // ------------------------------------
-        // 🟢 CLOCK IN: VISIBLE GPS PING FLOW
-        // ------------------------------------
-        if (btn) {
-          btn.disabled = true;
-          btn.style.opacity = '0.95';
-          btn.style.background = 'linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)';
-          btn.style.boxShadow = '0 0 25px rgba(37,99,235,0.8)';
-          btn.style.color = '#FFFFFF';
-        }
-        if (iconEl) iconEl.innerText = '📡';
-        if (textEl) textEl.innerText = 'Pinging your GPS location...';
-
-        const startTime = Date.now();
-
-        const finalizeClockIn = (userLat, userLng) => {
+        // -----------------------------
+        // 🟢 CLOCK IN EXECUTION
+        // -----------------------------
+        const completeClockIn = (userLat, userLng) => {
           const elapsed = Date.now() - startTime;
-          const remainingDelay = Math.max(0, 1500 - elapsed);
+          const remainingDwell = Math.max(0, 1800 - elapsed);
 
           setTimeout(() => {
             const distanceMiles = calculateDistanceMiles(userLat, userLng, assignedSite.lat, assignedSite.lng);
@@ -844,7 +853,13 @@
             };
 
             savePunchState();
-            if (btn) btn.disabled = false;
+            isPunchInProgress = false;
+            if (btn) {
+              btn.disabled = false;
+              btn.style.background = '';
+              btn.style.boxShadow = '';
+              btn.style.borderColor = '';
+            }
             renderView();
 
             if (isOff) {
@@ -876,38 +891,26 @@
               }
               broadcastToCloudBus(geoAlert);
             }
-          }, remainingDelay);
+          }, remainingDwell);
         };
 
         if (navigator.geolocation) {
           navigator.geolocation.getCurrentPosition(
-            (pos) => finalizeClockIn(pos.coords.latitude, pos.coords.longitude),
-            (err) => finalizeClockIn(47.6101, -122.2015),
+            (pos) => completeClockIn(pos.coords.latitude, pos.coords.longitude),
+            (err) => completeClockIn(47.6101, -122.2015),
             { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
           );
         } else {
-          finalizeClockIn(47.6101, -122.2015);
+          completeClockIn(47.6101, -122.2015);
         }
 
       } else {
-        // ------------------------------------
-        // 🔴 CLOCK OUT: VISIBLE GPS PING FLOW
-        // ------------------------------------
-        if (btn) {
-          btn.disabled = true;
-          btn.style.opacity = '0.95';
-          btn.style.background = 'linear-gradient(135deg, #D97706 0%, #B45309 100%)';
-          btn.style.boxShadow = '0 0 25px rgba(217,119,6,0.8)';
-          btn.style.color = '#FFFFFF';
-        }
-        if (iconEl) iconEl.innerText = '📡';
-        if (textEl) textEl.innerText = 'Pinging your GPS location...';
-
-        const startTime = Date.now();
-
-        const finalizeClockOut = (userLat, userLng) => {
+        // -----------------------------
+        // 🔴 CLOCK OUT EXECUTION
+        // -----------------------------
+        const completeClockOut = (userLat, userLng) => {
           const elapsed = Date.now() - startTime;
-          const remainingDelay = Math.max(0, 1500 - elapsed);
+          const remainingDwell = Math.max(0, 1800 - elapsed);
 
           setTimeout(() => {
             const diffHours = Math.max(0.01, (now.getTime() - active.clockInTime) / 3600000);
@@ -936,7 +939,13 @@
             savePunchState();
 
             syncHoursToPayroll(empName, roundedHours);
-            if (btn) btn.disabled = false;
+            isPunchInProgress = false;
+            if (btn) {
+              btn.disabled = false;
+              btn.style.background = '';
+              btn.style.boxShadow = '';
+              btn.style.borderColor = '';
+            }
             renderView();
 
             if (isOff) {
@@ -968,17 +977,17 @@
               }
               broadcastToCloudBus(geoAlert);
             }
-          }, remainingDelay);
+          }, remainingDwell);
         };
 
         if (navigator.geolocation) {
           navigator.geolocation.getCurrentPosition(
-            (pos) => finalizeClockOut(pos.coords.latitude, pos.coords.longitude),
-            (err) => finalizeClockOut(47.6101, -122.2015),
+            (pos) => completeClockOut(pos.coords.latitude, pos.coords.longitude),
+            (err) => completeClockOut(47.6101, -122.2015),
             { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
           );
         } else {
-          finalizeClockOut(47.6101, -122.2015);
+          completeClockOut(47.6101, -122.2015);
         }
       }
     }
@@ -1029,7 +1038,7 @@
           masterBtn.className = 'btn-action-punch btn-clock-out';
         }
         if (masterIcon) masterIcon.innerText = '⏹';
-        if (masterText) masterText.innerText = 'CLOCK OUT & SIGN OUT';
+        if (masterText && !isPunchInProgress) masterText.innerText = 'CLOCK OUT';
         if (activeArea) activeArea.style.display = 'block';
         if (stampEl) stampEl.innerText = 'Clocked in at: ' + activePunch.clockInTimeStr + ' (' + (activePunch.clockInDateStr || 'Today') + ')';
       } else {
@@ -1038,7 +1047,7 @@
           masterBtn.className = 'btn-action-punch btn-clock-in';
         }
         if (masterIcon) masterIcon.innerText = '▶';
-        if (masterText) masterText.innerText = 'CLOCK IN & SIGN IN';
+        if (masterText && !isPunchInProgress) masterText.innerText = 'CLOCK IN';
         if (activeArea) activeArea.style.display = 'none';
       }
 
