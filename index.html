@@ -1325,7 +1325,7 @@
       }
     }
 
-    window.openApprovalModal = function() {
+        window.openApprovalModal = function() {
       const modal = document.getElementById('hoursApprovalModal');
       const listEl = document.getElementById('approvalRequestsList');
       const adjs = getAdjustments();
@@ -1343,35 +1343,48 @@
       } else {
         let itemsHtml = '';
 
-        // 1. Geofence Alerts First (High Priority)
+        // 1. Geofence Alerts First (High Priority Alert)
         if (geofenceAlerts.length > 0) {
           itemsHtml += `
             <div style="font-size:12px; font-weight:900; color:#EF4444; text-transform:uppercase; margin-bottom:8px; display:flex; align-items:center; gap:6px;">
-              <span>⚠️</span> OFF-SITE CLOCK-IN GEOFENCE ALERTS (${geofenceAlerts.length})
+              <span>🚨</span> REAL-TIME OFF-SITE GEOFENCE ALERTS (${geofenceAlerts.length})
             </div>
           `;
-          itemsHtml += geofenceAlerts.map(geo => `
+          itemsHtml += geofenceAlerts.map(geo => {
+            const smsText = encodeURIComponent(`🚨 SOS GEOFENCE ALERT: ${geo.employeeName} clocked ${geo.punchType === 'CLOCK_IN' ? 'IN' : 'OUT'} ${geo.distanceMiles} mi off-site from ${geo.worksiteName}!`);
+            return `
             <div style="background:rgba(239, 68, 68, 0.08); border:2px solid #EF4444; border-radius:14px; padding:16px; margin-bottom:14px; box-shadow:0 4px 15px rgba(239,68,68,0.2);">
               <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
                 <span style="font-weight:900; font-size:16px; color:#FFF;">🚨 ${geo.employeeName}</span>
                 <span style="font-weight:900; font-size:12px; color:#FFF; background:#EF4444; padding:3px 8px; border-radius:8px;">${geo.distanceMiles} MILES OFF-SITE</span>
               </div>
               <div style="font-size:13px; color:var(--gold-light); margin-bottom:4px;">
-                <strong>Event:</strong> ${geo.punchType === 'CLOCK_IN' ? '▶ Clock In' : '⏹ Clock Out'} at ${geo.timeStr || 'Recently'}
+                <strong>Action:</strong> ${geo.punchType === 'CLOCK_IN' ? '▶ Clock In' : '⏹ Clock Out'} at ${geo.timeStr || 'Recently'}
               </div>
               <div style="font-size:12px; color:#CBD5E1; margin-bottom:4px;">
-                <strong>Actual Punch Location:</strong> 📍 ${geo.currentAddress || 'GPS Coordinates on file'}
+                <strong>Actual Punch GPS:</strong> 📍 ${geo.currentAddress || 'GPS on file'}
               </div>
-              <div style="font-size:12px; color:var(--silver); margin-bottom:12px;">
-                <strong>Assigned Worksite:</strong> 🏢 ${geo.worksiteName || 'Assigned Facility'} (${geo.worksiteAddress || ''})
+              <div style="font-size:12px; color:var(--silver); margin-bottom:10px;">
+                <strong>Assigned Worksite:</strong> 🏢 ${geo.worksiteName || 'Assigned Site'} (${geo.worksiteAddress || ''})
               </div>
+
+              <div style="background:rgba(0,0,0,0.4); border:1px solid var(--border); border-radius:8px; padding:8px 10px; margin-bottom:12px; font-size:11px; color:#94A3B8;">
+                <div style="font-weight:800; color:var(--gold-light); margin-bottom:4px;">📱 Owner Alert Notification Channels:</div>
+                <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                  <a href="sms:+12065780727?body=${smsText}" style="color:#38BDF8; text-decoration:none; font-weight:700;">📲 SMS Jacquise (206) 578-0727</a>
+                  <span>•</span>
+                  <a href="sms:+14255286820?body=${smsText}" style="color:#38BDF8; text-decoration:none; font-weight:700;">📲 SMS Guy (425) 528-6820</a>
+                </div>
+              </div>
+
               <div style="display:flex; justify-content:flex-end; gap:8px;">
                 <button onclick="dismissGeofenceAlert('${geo.id}')" style="background:linear-gradient(135deg, #1F2430 0%, #14171E 100%); color:#FFF; border:1px solid var(--border); font-weight:800; font-size:12px; padding:8px 14px; border-radius:8px; cursor:pointer;">
-                  ✓ Acknowledge / Dismiss
+                  ✓ Acknowledge / Dismiss Alert
                 </button>
               </div>
             </div>
-          `).join('');
+          `;
+          }).join('');
         }
 
         // 2. Hours Adjustment Requests
