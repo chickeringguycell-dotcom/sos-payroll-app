@@ -493,48 +493,49 @@
         </div>
       </div>
 
-            <!-- PANEL B: LOGGED IN (Authenticated Profile with Dedicated Photo Actions & Log Out) -->
+                  <!-- PANEL B: LOGGED IN (Human Placecard Left, Name Center, Log Out & Big Camera Right) -->
       <div id="panelLoggedIn" style="display:none;">
-        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px; border-bottom:1px solid var(--silver-border); padding-bottom:10px;">
-          <div>
-            <div style="font-size:10px; color:var(--text-muted); font-weight:700; text-transform:uppercase;">👤 Employee Profile</div>
-            <div id="loggedInEmpName" style="font-size:18px; font-weight:900; color:#FFF; margin-top:2px;">--</div>
-            <div id="displayWorksiteContainer" style="margin-top:4px;">
-              <span id="displayWorksiteBadge" style="font-size:11px; font-weight:700; color:var(--gold); background:rgba(212,175,55,0.15); padding:2px 8px; border-radius:6px; border:1px solid var(--gold); display:none;">
-                🏢 Worksite
-              </span>
-            </div>
-          </div>
-          <button onclick="handleTimecardLogout()" class="btn-dark" style="padding:6px 12px; font-size:12px; font-weight:800; color:#EF4444; border:1px solid rgba(239,68,68,0.4); border-radius:8px; background:rgba(239,68,68,0.1); cursor:pointer;">
-            🚪 Log Out
-          </button>
-        </div>
-
-        <!-- Dedicated Photo Controls Row -->
-        <div style="display:flex; align-items:center; gap:14px; background:rgba(0,0,0,0.25); padding:10px; border-radius:10px; border:1px solid var(--border);">
-          <div id="empAvatarContainer" style="width:62px; height:62px; min-width:62px; border-radius:50%; border:2px solid var(--gold); box-shadow:0 0 12px rgba(212,175,55,0.4); overflow:hidden; background:#10141C; display:flex; align-items:center; justify-content:center; cursor:pointer;" onclick="document.getElementById('galleryUploadInput').click()" title="Tap to upload or snap photo">
-            <span id="empAvatarInitials" style="font-size:20px; font-weight:900; color:var(--gold-light);">--</span>
-            <img id="empAvatarImg" src="" style="width:100%; height:100%; object-fit:cover; display:none;" alt="Profile Photo">
-          </div>
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
           
-          <div style="display:flex; flex-direction:column; gap:6px; flex-grow:1;">
-            <div style="font-size:11px; font-weight:700; color:var(--silver);">Profile Face Photo:</div>
-            <div style="display:flex; gap:8px; flex-wrap:wrap;">
-              
-              <!-- Button 1: Camera Snap -->
-              <button type="button" onclick="document.getElementById('cameraCaptureInput').click()" class="btn-gold" style="padding:6px 10px; font-size:11px; font-weight:800; display:inline-flex; align-items:center; gap:5px; border-radius:6px; cursor:pointer;">
-                <span>📸</span> Take Photo
-              </button>
-              <input type="file" id="cameraCaptureInput" accept="image/*" capture="user" style="display:none;" onchange="handleEmployeePhotoUpload(event)">
-
-              <!-- Button 2: Upload from Phone Gallery -->
-              <button type="button" onclick="document.getElementById('galleryUploadInput').click()" class="btn-dark" style="padding:6px 10px; font-size:11px; font-weight:800; color:var(--gold-light); display:inline-flex; align-items:center; gap:5px; border:1px solid var(--gold); border-radius:6px; cursor:pointer; background:rgba(212,175,55,0.08);">
-                <span>📁</span> Upload from Phone
-              </button>
+          <!-- LEFT SIDE: Human Placecard Photo Frame -->
+          <div style="display:flex; align-items:center; gap:12px;">
+            <div style="display:flex; flex-direction:column; align-items:center;">
+              <div id="empAvatarContainer" style="width:68px; height:68px; min-width:68px; border-radius:12px; border:2px solid var(--gold); box-shadow:0 0 14px rgba(212,175,55,0.4); overflow:hidden; background:linear-gradient(135deg, #1C222E 0%, #10141C 100%); display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer;" onclick="document.getElementById('galleryUploadInput').click()" title="Tap to select photo from phone files">
+                <span id="empAvatarInitials" style="font-size:22px; font-weight:900; color:var(--gold-light);">👤</span>
+                <span id="empAvatarTapLabel" style="font-size:9px; font-weight:700; color:var(--silver); text-transform:uppercase; margin-top:2px;">Photo</span>
+                <img id="empAvatarImg" src="" style="width:100%; height:100%; object-fit:cover; display:none;" alt="Profile Photo">
+              </div>
+              <label for="galleryUploadInput" style="font-size:10px; font-weight:800; color:var(--gold-light); cursor:pointer; margin-top:4px; display:flex; align-items:center; gap:3px;">
+                📁 Browse File
+              </label>
               <input type="file" id="galleryUploadInput" accept="image/*" style="display:none;" onchange="handleEmployeePhotoUpload(event)">
+            </div>
 
+            <!-- CENTER: Name & Worksite Information -->
+            <div>
+              <div style="font-size:10px; color:var(--text-muted); font-weight:700; text-transform:uppercase;">👤 Employee Profile</div>
+              <div id="loggedInEmpName" style="font-size:18px; font-weight:900; color:#FFF; margin-top:2px;">--</div>
+              <div id="displayWorksiteContainer" style="margin-top:4px;">
+                <span id="displayWorksiteBadge" style="font-size:11px; font-weight:700; color:var(--gold); background:rgba(212,175,55,0.15); padding:2px 8px; border-radius:6px; border:1px solid var(--gold); display:none;">
+                  🏢 Worksite
+                </span>
+              </div>
             </div>
           </div>
+
+          <!-- RIGHT SIDE: Log Out Moved Up & Big Easy-to-Push Camera Button Underneath -->
+          <div style="display:flex; flex-direction:column; align-items:flex-end; gap:8px;">
+            <button onclick="handleTimecardLogout()" class="btn-dark" style="padding:4px 10px; font-size:11px; font-weight:800; color:#EF4444; border:1px solid rgba(239,68,68,0.4); border-radius:6px; background:rgba(239,68,68,0.1); cursor:pointer;">
+              🚪 Log Out
+            </button>
+
+            <!-- Big Camera Button -->
+            <button type="button" onclick="document.getElementById('cameraCaptureInput').click()" class="btn-gold" style="padding:8px 14px; font-size:13px; font-weight:900; display:inline-flex; align-items:center; gap:6px; border-radius:8px; cursor:pointer; box-shadow:0 0 12px rgba(212,175,55,0.4);">
+              <span style="font-size:16px;">📷</span> Camera
+            </button>
+            <input type="file" id="cameraCaptureInput" accept="image/*" capture="user" style="display:none;" onchange="handleEmployeePhotoUpload(event)">
+          </div>
+
         </div>
       </div>
 
@@ -1297,21 +1298,26 @@
       if (panelLoggedIn) panelLoggedIn.style.display = 'block';
       if (nameDisp) nameDisp.innerText = empName;
 
-      // Avatar rendering
+            // Avatar rendering
       const avatarImg = document.getElementById('empAvatarImg');
       const avatarInitials = document.getElementById('empAvatarInitials');
+      const avatarTapLabel = document.getElementById('empAvatarTapLabel');
       const userPhoto = getEmployeePhoto(empName);
 
-      if (userPhoto && avatarImg && avatarInitials) {
+      if (userPhoto && avatarImg) {
         avatarImg.src = userPhoto;
         avatarImg.style.display = 'block';
-        avatarInitials.style.display = 'none';
-      } else if (avatarImg && avatarInitials) {
+        if (avatarInitials) avatarInitials.style.display = 'none';
+        if (avatarTapLabel) avatarTapLabel.style.display = 'none';
+      } else if (avatarImg) {
         avatarImg.style.display = 'none';
-        avatarInitials.style.display = 'block';
-        const parts = empName.trim().split(' ');
-        const initials = parts.length > 1 ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase() : parts[0].slice(0, 2).toUpperCase();
-        avatarInitials.innerText = initials;
+        if (avatarInitials) {
+          avatarInitials.style.display = 'block';
+          const parts = empName.trim().split(' ');
+          const initials = parts.length > 1 ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase() : parts[0].slice(0, 2).toUpperCase();
+          avatarInitials.innerText = initials;
+        }
+        if (avatarTapLabel) avatarTapLabel.style.display = 'block';
       }
 
       const assignedSite = getEmployeeWorksite(empName);
