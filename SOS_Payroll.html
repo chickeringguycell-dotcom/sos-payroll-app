@@ -418,7 +418,7 @@
           </div>
         </div>
 
-        <!-- Bank Name, Balance Input & Cushion Adjustment Bar -->
+                <!-- Bank Name, Balance Input & Cushion Adjustment Bar -->
         <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-top: 16px; background: #0E1217; padding: 14px; border-radius: 8px; border: 1px solid var(--border);">
           <div>
             <label style="font-size: 12px; font-weight: 700; color: var(--gold-light); display: block; margin-bottom: 4px;">
@@ -437,6 +437,26 @@
               🛡️ Business & Payroll Reserve ($):
             </label>
             <input type="number" step="100" id="input-safety-cushion" class="input-field font-mono" style="font-size: 15px; font-weight: 800;" placeholder="5000.00" oninput="handleCushionChange(this.value)">
+          </div>
+        </div>
+
+        <!-- Emergency Fund Release Action Bar -->
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:14px; padding:12px 14px; background:rgba(212,175,55,0.06); border:1px dashed var(--gold); border-radius:8px; flex-wrap:wrap; gap:10px;">
+          <div>
+            <div style="font-weight:800; font-size:13px; color:var(--gold-light);">
+              🔓 Need to Pay an Employee or Buy Urgent Job Site Supplies?
+            </div>
+            <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">
+              Authorize an emergency draw from the $5,000 reserve to immediately free up spendable cash.
+            </div>
+          </div>
+          <div style="display:flex; gap:8px;">
+            <button class="btn-gold" style="font-size:12px; font-weight:900; padding:8px 16px; background:linear-gradient(135deg, var(--gold) 0%, #B89020 100%); color:#000; box-shadow:0 0 12px rgba(212,175,55,0.4);" onclick="openEmergencyFundReleaseModal()">
+              🔓 Release Funds to Spendable Cash
+            </button>
+            <button class="btn-dark" style="font-size:11px; padding:8px 12px;" onclick="replenishEmergencyFundToTarget()" title="Reset Reserve back to $5,000">
+              ♻️ Top-Up to $5,000
+            </button>
           </div>
         </div>
       </div>
