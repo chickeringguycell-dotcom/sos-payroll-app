@@ -345,6 +345,7 @@
     <a href="#sec-taxes" class="nav-btn">🏛️ Tax Vault (WA & IRS)</a>
     <a href="#sec-worksites" class="nav-btn">🏢 Client Contracts & Worksites</a>
     <a href="#sec-archived" class="nav-btn" style="color:#F87171;">🗄️ Former Employees Vault</a>
+    <a href="#sec-audit-log" class="nav-btn" style="color:var(--gold-light);">📜 Audit & Email Ledger</a>
   </nav>
 
   <main id="app-viewport">
@@ -719,6 +720,42 @@
               </tr>
             </thead>
             <tbody id="archived-tbody">
+              <!-- Rendered dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+  
+    <!-- 7. LIVE BUSINESS AUDIT TRAIL & EMAIL DISPATCH LEDGER -->
+    <section id="sec-audit-log" class="section-container" style="margin-top:28px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:10px;">
+        <div>
+          <h2 class="font-cinzel section-title" style="margin-bottom:2px; border-bottom:none; padding-bottom:0; color:var(--gold-light);">
+            <span>📜</span> Live Business Audit Trail & Email Ledger
+          </h2>
+          <p style="font-size:12px; color:var(--text-muted);">
+            Golden Rule Enforced: Every transaction, payroll run, emergency reserve draw, and geofence incident is automatically emailed to <strong>sos.cleaning@outlook.com</strong>.
+          </p>
+        </div>
+        <button class="btn-dark" style="font-size:11px; padding:6px 14px;" onclick="exportAuditLedgerCSV()">
+          📥 Export Audit Log (.CSV)
+        </button>
+      </div>
+
+      <div class="card" style="padding:0; overflow:hidden; border:1px solid var(--border);">
+        <div class="table-container" style="overflow-x:auto;">
+          <table class="data-table" style="width:100%; border-collapse:collapse;">
+            <thead>
+              <tr style="background:#14171F;">
+                <th style="width:160px;">Date & Time</th>
+                <th style="width:140px;">Category</th>
+                <th>Event Description & Details</th>
+                <th style="width:180px; text-align:center;">Email Delivery Status</th>
+              </tr>
+            </thead>
+            <tbody id="audit-log-tbody">
               <!-- Rendered dynamically -->
             </tbody>
           </table>
@@ -1553,6 +1590,12 @@ Timesheet and payroll taxes updated automatically.`);
       };
 
       // Push to Archive Vault
+      dispatchBusinessAuditEmail(
+        'EMPLOYEE_TERMINATION',
+        `Employee Separated: ${member.name} (${termType})`,
+        `Employee: ${member.name}\nPosition: ${member.role}\nHire Date: ${hireDate}\nDeparture Date: ${termDate}\nCategory: ${termType}\nNotes/Reason: ${termReason}`,
+        true
+      );
       AppData.archivedEmployees.unshift(archivedRecord);
 
       // Remove from Active Roster
@@ -1594,7 +1637,13 @@ All wage and hour records are permanently secured in the Archive.`);
           waLniRate: 1.75
         };
 
-        AppData.team.push(restoredMember);
+        dispatchBusinessAuditEmail(
+        'EMPLOYEE_REHIRE',
+        `Employee Rehired: ${emp.name} restored to Active Payroll`,
+        `Employee: ${emp.name}\nPosition: ${emp.role}\nPay Rate: $${Number(emp.hourlyRate).toFixed(2)}/hr\nRehire Date: ${new Date().toLocaleDateString()}`,
+        true
+      );
+      AppData.team.push(restoredMember);
         AppData.archivedEmployees.splice(archivedIndex, 1);
 
         saveState();
@@ -2055,6 +2104,16 @@ Geofence perimeter: ${(radiusMiles * 5280).toFixed(0)} ft.`);
 
     window.downloadNACHAFile = function() {
       const calcData = calculateTeamPayroll();
+      const totalNet = calcData.reduce((sum, m) => sum + m.netPay, 0);
+      
+      // Dispatch Golden Rule Audit Email
+      if (typeof dispatchBusinessAuditEmail === 'function') {
+        dispatchBusinessAuditEmail(
+          'PAYROLL_NACHA_BATCH_EXPORT',
+          `Direct Deposit NACHA Batch File Downloaded ($${totalNet.toFixed(2)})`,
+          `Batch Amount: $${totalNet.toFixed(2)}\nDate: ${new Date().toLocaleDateString()}\nEmployees: ${calcData.filter(m => !m.isOwner && m.netPay > 0).map(m => m.name + ' ($' + m.netPay.toFixed(2) + ')').join(', ')}`
+        );
+      }
       const nachaText = generateNACHABatchFile(calcData);
       
       const dateStr = new Date().toISOString().split('T')[0];
