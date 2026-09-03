@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sos-suite-live-v30';
+const CACHE_NAME = 'sos-suite-live-v35';
 const URLS_TO_CACHE = [
   './',
   './index.html',
@@ -7,6 +7,10 @@ const URLS_TO_CACHE = [
   './timecard.html',
   './timecard/index.html',
   './logo.png',
+  './icon-192-tc.png',
+  './icon-512-tc.png',
+  './apple-touch-icon-tc.png',
+  './favicon-tc.png',
   './manifest.json'
 ];
 
@@ -25,7 +29,7 @@ self.addEventListener('activate', (event) => {
       return Promise.all(
         cacheNames.map((cacheName) => {
           if (cacheName !== CACHE_NAME) {
-            console.log('Purging old cache:', cacheName);
+            console.log('[SW] Purging old cache:', cacheName);
             return caches.delete(cacheName);
           }
         })
@@ -41,7 +45,6 @@ self.addEventListener('message', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // Network first strategy so devices always fetch the latest live updates immediately!
   event.respondWith(
     fetch(event.request)
       .then((networkResponse) => {
