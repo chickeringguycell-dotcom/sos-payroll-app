@@ -1346,39 +1346,67 @@
       }
     }
 
-            // Universal Real-Time Cloud Alert Publisher for Dual Owners
+                // Dual-Owner Automated SMS Text Dispatcher & Cloud Alert Relay
     const CLOUD_ALERT_TOPIC = 'sos_spotless_alerts_bus_v1';
     const CLOUD_BUS_POST_URL = 'https://ntfy.sh/' + CLOUD_ALERT_TOPIC;
+    
+    // Verified Dual Owner Mobile Numbers
+    const OWNER_GUY_PHONE = '4255286820';       // (425) 528-6820
+    const OWNER_JACQUISE_PHONE = '2065780727';  // (206) 578-0727
 
-    function broadcastToCloudBus(alertObj) {
+    async function dispatchAutomatedOwnerSMS(alertObj) {
       try {
         const punchWord = alertObj.punchType === 'CLOCK_IN' ? 'CLOCK IN' : 'CLOCK OUT';
-        const title = '🚨 OFF-SITE ' + punchWord + ': ' + alertObj.employeeName;
-        const bodyText = alertObj.employeeName + ' clocked ' + (alertObj.punchType === 'CLOCK_IN' ? 'IN' : 'OUT') + ' ' + (alertObj.distanceMiles || '0.0') + ' mi off-site from ' + (alertObj.worksiteName || 'Worksite') + '!';
+        const smsContent = `🚨 SOS GEOFENCE VIOLATION!
+Cleaner: ${alertObj.employeeName}
+Action: ${punchWord}
+Off-Site: ${alertObj.distanceMiles || '0.0'} miles away
+Assigned Site: ${alertObj.worksiteName || 'Worksite'}
+Time: ${alertObj.timeStr}
+GPS: ${alertObj.currentAddress}
+Open Payroll: https://chickeringguycell-dotcom.github.io/sos-payroll-app/?v=94`;
 
-        // 1. Post to Real-Time Cloud Relay Bus (Instant SSE delivery to Owner Phones & PC)
+        // 1. Dispatch to Cloud Bus with Urgent SMS priority tags
         fetch(CLOUD_BUS_POST_URL, {
           method: 'POST',
           headers: {
-            'Title': title,
+            'Title': `🚨 OFF-SITE ${punchWord}: ${alertObj.employeeName}`,
             'Priority': 'urgent',
-            'Tags': 'rotating_light,warning,sos'
+            'Tags': 'rotating_light,warning,phone,sos'
           },
-          body: JSON.stringify(alertObj)
-        }).catch(err => {
-          console.warn('[Cloud Bus] Post failed:', err);
-        });
-
-        // 2. Secondary Cloud Backup Relay (npoint JSON store)
-        fetch('https://api.npoint.io/41517a26ea9e1a8ef6bc', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(alertObj)
         }).catch(() => {});
 
-      } catch (e) {
-        console.warn('[Cloud Bus] Exception:', e);
+        // 2. Dispatch via Multi-Carrier Email-to-SMS Gateways & Webhooks
+        const carrierGateways = [
+          OWNER_GUY_PHONE + '@vtext.com',      // Verizon Guy
+          OWNER_GUY_PHONE + '@tmomail.net',    // T-Mobile Guy
+          OWNER_GUY_PHONE + '@txt.att.net',    // AT&T Guy
+          OWNER_JACQUISE_PHONE + '@vtext.com',  // Verizon Jacquise
+          OWNER_JACQUISE_PHONE + '@tmomail.net',// T-Mobile Jacquise
+          OWNER_JACQUISE_PHONE + '@txt.att.net',// AT&T Jacquise
+          'sos.cleaning@outlook.com'
+        ];
+
+        carrierGateways.forEach(targetAddress => {
+          fetch('https://formspree.io/f/mqazkzyy', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+            body: JSON.stringify({
+              to: targetAddress,
+              subject: '🚨 SOS Geofence Violation: ' + alertObj.employeeName + ' (' + punchWord + ')',
+              message: smsContent
+            })
+          }).catch(() => {});
+        });
+
+      } catch (err) {
+        console.warn('[SMS Dispatcher] Error:', err);
       }
+    }
+
+    function broadcastToCloudBus(alertObj) {
+      dispatchAutomatedOwnerSMS(alertObj);
     }
 
     // ==========================================

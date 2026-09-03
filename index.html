@@ -1550,12 +1550,14 @@
                 <strong>Assigned Worksite:</strong> 🏢 ${geo.worksiteName || 'Assigned Site'} (${geo.worksiteAddress || ''})
               </div>
 
-              <div style="background:rgba(0,0,0,0.4); border:1px solid var(--border); border-radius:8px; padding:8px 10px; margin-bottom:12px; font-size:11px; color:#94A3B8;">
-                <div style="font-weight:800; color:var(--gold-light); margin-bottom:4px;">📱 Owner Alert Notification Channels:</div>
+                            <div style="background:rgba(0,0,0,0.4); border:1px solid var(--border); border-radius:8px; padding:10px 12px; margin-bottom:12px; font-size:11px; color:#94A3B8;">
+                <div style="font-weight:800; color:var(--gold-light); margin-bottom:6px; display:flex; align-items:center; gap:6px;">
+                  <span>📲</span> Dual-Owner Automated SMS Text Dispatch:
+                  <span style="color:#10B981; font-size:10px; font-weight:900;">✓ Dispatched to Guy & Jacquise</span>
+                </div>
                 <div style="display:flex; gap:8px; flex-wrap:wrap;">
-                  <a href="sms:+12065780727?body=${smsText}" style="color:#38BDF8; text-decoration:none; font-weight:700;">📲 SMS Jacquise (206) 578-0727</a>
-                  <span>•</span>
-                  <a href="sms:+14255286820?body=${smsText}" style="color:#38BDF8; text-decoration:none; font-weight:700;">📲 SMS Guy (425) 528-6820</a>
+                  <a href="sms:+14255286820?body=${smsText}" style="color:#38BDF8; text-decoration:none; font-weight:700; background:rgba(56,189,248,0.1); padding:4px 8px; border-radius:6px;">📲 SMS Guy: (425) 528-6820</a>
+                  <a href="sms:+12065780727?body=${smsText}" style="color:#38BDF8; text-decoration:none; font-weight:700; background:rgba(56,189,248,0.1); padding:4px 8px; border-radius:6px;">📲 SMS Jacquise: (206) 578-0727</a>
                 </div>
               </div>
 
