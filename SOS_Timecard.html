@@ -511,10 +511,19 @@
               </div>
             </div>
 
-            <!-- Bottom Left: Square Photo Frame (Rounded corners, tap to adjust) -->
-            <div id="empAvatarContainer" style="width:74px; height:74px; min-width:74px; border-radius:10px; border:2.5px solid var(--gold); box-shadow:0 0 16px rgba(212,175,55,0.45); overflow:hidden; background:linear-gradient(135deg, #1C222E 0%, #10141C 100%); display:flex; align-items:center; justify-content:center; cursor:pointer;" onclick="reopenCurrentPhotoAdjuster()" title="Tap to adjust photo positioning with your finger">
-              <span id="empAvatarInitials" style="font-size:24px; font-weight:900; color:var(--gold-light);">GC</span>
-              <img id="empAvatarImg" src="" style="width:100%; height:100%; object-fit:cover; display:none;" alt="Profile Photo">
+                        <!-- Bottom Left: Interactive Touch-Draggable Square Photo Frame -->
+            <div style="position:relative;">
+              <div id="empAvatarContainer" style="width:78px; height:78px; min-width:78px; border-radius:12px; border:2.5px solid var(--gold); box-shadow:0 0 16px rgba(212,175,55,0.45); overflow:hidden; background:linear-gradient(135deg, #1C222E 0%, #10141C 100%); display:flex; align-items:center; justify-content:center; cursor:grab; touch-action:none; user-select:none; position:relative;" title="Put your finger on photo to drag & center, lift off to save!">
+                <span id="empAvatarInitials" style="font-size:26px; font-weight:900; color:var(--gold-light);">GC</span>
+                <canvas id="directAvatarCanvas" width="156" height="156" style="width:100%; height:100%; object-fit:cover; display:none; border-radius:10px;"></canvas>
+                <img id="empAvatarImg" src="" style="width:100%; height:100%; object-fit:cover; display:none; border-radius:10px;" alt="Profile Photo">
+                <div id="dragHintOverlay" style="position:absolute; inset:0; background:rgba(0,0,0,0.45); color:var(--gold-light); font-size:9px; font-weight:800; display:none; align-items:center; justify-content:center; text-align:center; padding:2px; pointer-events:none; border-radius:10px;">
+                  👆 DRAGGING<br>LIFT TO SAVE
+                </div>
+              </div>
+              <div id="avatarSaveToast" style="position:absolute; bottom:-18px; left:0; width:100%; text-align:center; font-size:9px; font-weight:800; color:var(--emerald); display:none;">
+                ✓ Saved
+              </div>
             </div>
 
           </div>
@@ -742,13 +751,347 @@
       currentSession = sess;
     }
 
-        function getEmployeePhoto(empName) {
+            // === PHOTO & TOUCH-DRAGGABLE AVATAR ENGINE ===
+    let inPlaceRawImg = null;
+    let inPlaceOffsetX = 0;
+    let inPlaceOffsetY = 0;
+    let inPlaceScale = 1.0;
+    let isDirectDragging = false;
+    let directStartX = 0;
+    let directStartY = 0;
+    let lastTapTime = 0;
+
+    let rawPhotoImg = null;
+    let cropOffsetX = 0;
+    let cropOffsetY = 0;
+    let cropScale = 1.0;
+    let isDraggingCrop = false;
+    let dragStartX = 0;
+    let dragStartY = 0;
+
+    function getEmployeePhoto(empName) {
       if (!empName) return '';
       try {
         return localStorage.getItem('sos_photo_' + empName.toLowerCase()) || '';
       } catch(e) {
         return '';
       }
+    }
+
+    function getOriginalUncroppedPhoto(empName) {
+      if (!empName) return '';
+      try {
+        return localStorage.getItem('sos_raw_photo_' + empName.toLowerCase()) || localStorage.getItem('sos_photo_' + empName.toLowerCase()) || '';
+      } catch(e) {
+        return '';
+      }
+    }
+
+    function initDirectAvatarInteraction() {
+      const container = document.getElementById('empAvatarContainer');
+      const canvas = document.getElementById('directAvatarCanvas');
+      if (!container || !canvas || container.dataset.directDragAttached) return;
+      container.dataset.directDragAttached = 'true';
+
+      const startAction = (clientX, clientY) => {
+        const empName = getActiveName();
+        const rawSrc = getOriginalUncroppedPhoto(empName);
+        if (!rawSrc) return;
+
+        isDirectDragging = true;
+        directStartX = clientX - inPlaceOffsetX;
+        directStartY = clientY - inPlaceOffsetY;
+        container.style.cursor = 'grabbing';
+        container.style.borderColor = 'var(--emerald)';
+        container.style.boxShadow = '0 0 20px rgba(16,185,129,0.8)';
+        const hint = document.getElementById('dragHintOverlay');
+        if (hint) hint.style.display = 'flex';
+      };
+
+      const moveAction = (clientX, clientY) => {
+        if (!isDirectDragging) return;
+        inPlaceOffsetX = clientX - directStartX;
+        inPlaceOffsetY = clientY - directStartY;
+        renderDirectAvatarCanvas();
+      };
+
+      const endAction = () => {
+        if (!isDirectDragging) return;
+        isDirectDragging = false;
+        container.style.cursor = 'grab';
+        container.style.borderColor = 'var(--gold)';
+        container.style.boxShadow = '0 0 16px rgba(212,175,55,0.45)';
+        const hint = document.getElementById('dragHintOverlay');
+        if (hint) hint.style.display = 'none';
+
+        // Auto-save cropped position on finger lift
+        saveDirectAvatarPosition();
+      };
+
+      // Mouse Drag Events
+      container.addEventListener('mousedown', (e) => startAction(e.clientX, e.clientY));
+      window.addEventListener('mousemove', (e) => moveAction(e.clientX, e.clientY));
+      window.addEventListener('mouseup', endAction);
+
+      // Mobile Touch Drag Events (Pointers / Fingers)
+      container.addEventListener('touchstart', (e) => {
+        const now = Date.now();
+        if (now - lastTapTime < 300) {
+          // Double Tap: Open Full Adjuster Modal
+          reopenCurrentPhotoAdjuster();
+          lastTapTime = 0;
+          return;
+        }
+        lastTapTime = now;
+
+        if (e.touches && e.touches.length > 0) {
+          startAction(e.touches[0].clientX, e.touches[0].clientY);
+        }
+      }, { passive: true });
+
+      window.addEventListener('touchmove', (e) => {
+        if (isDirectDragging && e.touches && e.touches.length > 0) {
+          moveAction(e.touches[0].clientX, e.touches[0].clientY);
+        }
+      }, { passive: true });
+
+      window.addEventListener('touchend', endAction, { passive: true });
+    }
+
+    function renderDirectAvatarCanvas() {
+      const canvas = document.getElementById('directAvatarCanvas');
+      if (!canvas || !inPlaceRawImg) return;
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      const cvDim = 156;
+      const aspect = inPlaceRawImg.width / inPlaceRawImg.height;
+      let baseW, baseH;
+      if (aspect > 1) {
+        baseH = cvDim;
+        baseW = cvDim * aspect;
+      } else {
+        baseW = cvDim;
+        baseH = cvDim / aspect;
+      }
+
+      const drawW = baseW * inPlaceScale;
+      const drawH = baseH * inPlaceScale;
+
+      ctx.drawImage(inPlaceRawImg, inPlaceOffsetX * 2, inPlaceOffsetY * 2, drawW, drawH);
+    }
+
+    function saveDirectAvatarPosition() {
+      const canvas = document.getElementById('directAvatarCanvas');
+      const empName = getActiveName();
+      if (!canvas || !empName) return;
+
+      const finalCanvas = document.createElement('canvas');
+      finalCanvas.width = 256;
+      finalCanvas.height = 256;
+      const fCtx = finalCanvas.getContext('2d');
+      fCtx.drawImage(canvas, 0, 0, 256, 256);
+
+      const croppedDataUrl = finalCanvas.toDataURL('image/jpeg', 0.90);
+
+      try {
+        localStorage.setItem('sos_photo_' + empName.toLowerCase(), croppedDataUrl);
+      } catch(e) {}
+
+      if (syncChannel) {
+        syncChannel.postMessage({ type: 'REFRESH_PHOTO', employee: empName, photo: croppedDataUrl });
+      }
+
+      const toast = document.getElementById('avatarSaveToast');
+      if (toast) {
+        toast.style.display = 'block';
+        setTimeout(() => { toast.style.display = 'none'; }, 2000);
+      }
+    }
+
+    function loadInPlaceAvatar(empName) {
+      const canvas = document.getElementById('directAvatarCanvas');
+      const avatarInitials = document.getElementById('empAvatarInitials');
+      const avatarImg = document.getElementById('empAvatarImg');
+      if (!canvas) return;
+
+      const rawSrc = getOriginalUncroppedPhoto(empName);
+      if (rawSrc) {
+        inPlaceRawImg = new Image();
+        inPlaceRawImg.onload = function() {
+          canvas.style.display = 'block';
+          if (avatarInitials) avatarInitials.style.display = 'none';
+          if (avatarImg) avatarImg.style.display = 'none';
+
+          const cvDim = 156;
+          const aspect = inPlaceRawImg.width / inPlaceRawImg.height;
+          let drawW, drawH;
+          if (aspect > 1) {
+            drawH = cvDim;
+            drawW = cvDim * aspect;
+          } else {
+            drawW = cvDim;
+            drawH = cvDim / aspect;
+          }
+          inPlaceOffsetX = (78 - drawW / 2) / 2;
+          inPlaceOffsetY = (78 - drawH / 2) / 2;
+
+          renderDirectAvatarCanvas();
+          initDirectAvatarInteraction();
+        };
+        inPlaceRawImg.src = rawSrc;
+      } else {
+        canvas.style.display = 'none';
+        if (avatarInitials) {
+          avatarInitials.style.display = 'block';
+          const parts = empName.trim().split(' ');
+          const initials = parts.length > 1 ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase() : parts[0].slice(0, 2).toUpperCase();
+          avatarInitials.innerText = initials;
+        }
+      }
+    }
+
+    function openPhotoAdjustModal(imgSrc) {
+      const modal = document.getElementById('photoAdjustModal');
+      const canvas = document.getElementById('cropCanvas');
+      if (!modal || !canvas) return;
+
+      rawPhotoImg = new Image();
+      rawPhotoImg.onload = function() {
+        cropScale = 1.0;
+        document.getElementById('cropZoomSlider').value = '1.0';
+        document.getElementById('cropZoomLabel').innerText = '1.0x';
+
+        const cvDim = 220;
+        const aspect = rawPhotoImg.width / rawPhotoImg.height;
+        let drawW, drawH;
+        if (aspect > 1) {
+          drawH = cvDim;
+          drawW = cvDim * aspect;
+        } else {
+          drawW = cvDim;
+          drawH = cvDim / aspect;
+        }
+        cropOffsetX = (cvDim - drawW) / 2;
+        cropOffsetY = (cvDim - drawH) / 2;
+
+        modal.style.display = 'flex';
+        drawCropCanvas();
+        setupCropTouchEvents();
+      };
+      rawPhotoImg.src = imgSrc;
+    }
+
+    function closePhotoAdjustModal() {
+      const modal = document.getElementById('photoAdjustModal');
+      if (modal) modal.style.display = 'none';
+    }
+
+    function reopenCurrentPhotoAdjuster() {
+      const empName = getActiveName();
+      const currentPhoto = getOriginalUncroppedPhoto(empName);
+      if (currentPhoto) {
+        openPhotoAdjustModal(currentPhoto);
+      } else {
+        document.getElementById('galleryUploadInput').click();
+      }
+    }
+
+    function handleCropZoomChange(val) {
+      cropScale = parseFloat(val) || 1.0;
+      document.getElementById('cropZoomLabel').innerText = cropScale.toFixed(1) + 'x';
+      drawCropCanvas();
+    }
+
+    function drawCropCanvas() {
+      const canvas = document.getElementById('cropCanvas');
+      if (!canvas || !rawPhotoImg) return;
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      const cvDim = 220;
+      const aspect = rawPhotoImg.width / rawPhotoImg.height;
+      let baseW, baseH;
+      if (aspect > 1) {
+        baseH = cvDim;
+        baseW = cvDim * aspect;
+      } else {
+        baseW = cvDim;
+        baseH = cvDim / aspect;
+      }
+
+      const drawW = baseW * cropScale;
+      const drawH = baseH * cropScale;
+
+      ctx.drawImage(rawPhotoImg, cropOffsetX, cropOffsetY, drawW, drawH);
+    }
+
+    function setupCropTouchEvents() {
+      const viewport = document.getElementById('cropViewport');
+      if (!viewport || viewport.dataset.eventsAttached) return;
+      viewport.dataset.eventsAttached = 'true';
+
+      const startDrag = (clientX, clientY) => {
+        isDraggingCrop = true;
+        dragStartX = clientX - cropOffsetX;
+        dragStartY = clientY - cropOffsetY;
+        viewport.style.cursor = 'grabbing';
+      };
+
+      const moveDrag = (clientX, clientY) => {
+        if (!isDraggingCrop) return;
+        cropOffsetX = clientX - dragStartX;
+        cropOffsetY = clientY - dragStartY;
+        drawCropCanvas();
+      };
+
+      const endDrag = () => {
+        isDraggingCrop = false;
+        viewport.style.cursor = 'grab';
+      };
+
+      viewport.addEventListener('mousedown', (e) => startDrag(e.clientX, e.clientY));
+      window.addEventListener('mousemove', (e) => moveDrag(e.clientX, e.clientY));
+      window.addEventListener('mouseup', endDrag);
+
+      viewport.addEventListener('touchstart', (e) => {
+        if (e.touches && e.touches.length > 0) {
+          startDrag(e.touches[0].clientX, e.touches[0].clientY);
+        }
+      }, { passive: true });
+
+      viewport.addEventListener('touchmove', (e) => {
+        if (e.touches && e.touches.length > 0) {
+          moveDrag(e.touches[0].clientX, e.touches[0].clientY);
+        }
+      }, { passive: true });
+
+      viewport.addEventListener('touchend', endDrag, { passive: true });
+    }
+
+    function saveCroppedPhoto() {
+      const canvas = document.getElementById('cropCanvas');
+      const empName = getActiveName();
+      if (!canvas || !empName) return;
+
+      const finalCanvas = document.createElement('canvas');
+      finalCanvas.width = 256;
+      finalCanvas.height = 256;
+      const fCtx = finalCanvas.getContext('2d');
+      fCtx.drawImage(canvas, 0, 0, 256, 256);
+
+      const croppedDataUrl = finalCanvas.toDataURL('image/jpeg', 0.90);
+
+      try {
+        localStorage.setItem('sos_photo_' + empName.toLowerCase(), croppedDataUrl);
+      } catch(e) {}
+
+      if (syncChannel) {
+        syncChannel.postMessage({ type: 'REFRESH_PHOTO', employee: empName, photo: croppedDataUrl });
+      }
+
+      closePhotoAdjustModal();
+      renderView();
     }
 
     function handleEmployeePhotoUpload(event) {
@@ -758,46 +1101,17 @@
 
       const reader = new FileReader();
       reader.onload = function(e) {
-        const img = new Image();
-        img.onload = function() {
-          const canvas = document.createElement('canvas');
-          const maxDim = 256;
-          let w = img.width;
-          let h = img.height;
+        try {
+          localStorage.setItem('sos_raw_photo_' + empName.toLowerCase(), e.target.result);
+          localStorage.setItem('sos_photo_' + empName.toLowerCase(), e.target.result);
+        } catch(err) {}
 
-          if (w > h) {
-            if (w > maxDim) {
-              h = Math.round((h * maxDim) / w);
-              w = maxDim;
-            }
-          } else {
-            if (h > maxDim) {
-              w = Math.round((w * maxDim) / h);
-              h = maxDim;
-            }
-          }
+        if (syncChannel) {
+          syncChannel.postMessage({ type: 'REFRESH_PHOTO', employee: empName, photo: e.target.result });
+        }
 
-          canvas.width = w;
-          canvas.height = h;
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(img, 0, 0, w, h);
-
-          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.85);
-
-          try {
-            localStorage.setItem('sos_photo_' + empName.toLowerCase(), compressedDataUrl);
-          } catch(err) {
-            console.warn('Storage quota exceeded, storing photo in memory');
-          }
-
-          if (syncChannel) {
-            syncChannel.postMessage({ type: 'REFRESH_PHOTO', employee: empName, photo: compressedDataUrl });
-          }
-
-          renderView();
-          alert(`📸 Photo updated successfully for ${empName}!`);
-        };
-        img.src = e.target.result;
+        renderView();
+        openPhotoAdjustModal(e.target.result);
       };
       reader.readAsDataURL(file);
     }
@@ -805,66 +1119,6 @@
     function getActiveName() {
       const input = document.getElementById('employeeNameInput');
       return (input && input.value.trim()) ? input.value.trim() : (currentSession ? currentSession.name : 'Guy Chickering');
-    }
-
-                function getEmployeePhoto(empName) {
-      if (!empName) return '';
-      try {
-        return localStorage.getItem('sos_photo_' + empName.toLowerCase()) || '';
-      } catch(e) {
-        return '';
-      }
-    }
-
-    function handleEmployeePhotoUpload(event) {
-      const file = event.target.files && event.target.files[0];
-      const empName = getActiveName();
-      if (!file || !empName) return;
-
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        const img = new Image();
-        img.onload = function() {
-          const canvas = document.createElement('canvas');
-          const maxDim = 256;
-          let w = img.width;
-          let h = img.height;
-
-          if (w > h) {
-            if (w > maxDim) {
-              h = Math.round((h * maxDim) / w);
-              w = maxDim;
-            }
-          } else {
-            if (h > maxDim) {
-              w = Math.round((w * maxDim) / h);
-              h = maxDim;
-            }
-          }
-
-          canvas.width = w;
-          canvas.height = h;
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(img, 0, 0, w, h);
-
-          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.85);
-
-          try {
-            localStorage.setItem('sos_photo_' + empName.toLowerCase(), compressedDataUrl);
-          } catch(err) {
-            console.warn('Storage quota exceeded, storing photo in memory');
-          }
-
-          if (syncChannel) {
-            syncChannel.postMessage({ type: 'REFRESH_PHOTO', employee: empName, photo: compressedDataUrl });
-          }
-
-          renderView();
-          alert(`📸 Photo updated successfully for ${empName}!`);
-        };
-        img.src = e.target.result;
-      };
-      reader.readAsDataURL(file);
     }
 
     function getActiveName() {
@@ -1342,26 +1596,7 @@
       if (nameDisp) nameDisp.innerText = empName;
 
             // Avatar rendering
-      const avatarImg = document.getElementById('empAvatarImg');
-      const avatarInitials = document.getElementById('empAvatarInitials');
-      const avatarTapLabel = document.getElementById('empAvatarTapLabel');
-      const userPhoto = getEmployeePhoto(empName);
-
-      if (userPhoto && avatarImg) {
-        avatarImg.src = userPhoto;
-        avatarImg.style.display = 'block';
-        if (avatarInitials) avatarInitials.style.display = 'none';
-        if (avatarTapLabel) avatarTapLabel.style.display = 'none';
-      } else if (avatarImg) {
-        avatarImg.style.display = 'none';
-        if (avatarInitials) {
-          avatarInitials.style.display = 'block';
-          const parts = empName.trim().split(' ');
-          const initials = parts.length > 1 ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase() : parts[0].slice(0, 2).toUpperCase();
-          avatarInitials.innerText = initials;
-        }
-        if (avatarTapLabel) avatarTapLabel.style.display = 'block';
-      }
+      loadInPlaceAvatar(empName);
 
       const assignedSite = getEmployeeWorksite(empName);
       if (siteBadge) {
