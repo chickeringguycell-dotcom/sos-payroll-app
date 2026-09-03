@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sos-suite-live-v86';
+const CACHE_NAME = 'sos-suite-live-v87';
 const URLS_TO_CACHE = [
   './',
   './index.html',
@@ -63,7 +63,7 @@ self.addEventListener('push', (event) => {
     badge: './logo.png',
     vibrate: [400, 200, 400, 200, 400],
     requireInteraction: true,
-    data: { url: './index.html?v=86' }
+    data: { url: './index.html?v=87' }
   };
 
   event.waitUntil(

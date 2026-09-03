@@ -372,16 +372,16 @@
     </div>
   </header>
 
-  <!-- Quick Jump Anchor Bar -->
+    <!-- Quick Jump Anchor Bar -->
   <nav class="nav-bar">
     <a href="#sec-cash" class="nav-btn">💰 Live Cash & $5K Cushion</a>
     <a href="#sec-timecards" class="nav-btn" style="color:var(--gold-light);">📋 Employee Timecards</a>
-    <a href="#sec-team" class="nav-btn">👥 Team, Owners & Employee Payroll</a>
-    <a href="#sec-expenses" class="nav-btn">🧾 Business Expenses & Receipts</a>
-    <a href="#sec-taxes" class="nav-btn">🏛️ Tax Vault (WA & IRS)</a>
+    <a href="#sec-team" class="nav-btn">👥 Team, Owners & Payroll</a>
+    <a href="#sec-expenses" class="nav-btn">🧾 Business Expenses</a>
     <a href="#sec-worksites" class="nav-btn">🏢 Client Contracts & Worksites</a>
-    <a href="#sec-archived" class="nav-btn" style="color:#F87171;">🗄️ Former Employees Vault</a>
+    <a href="#sec-archived" class="nav-btn" style="color:#F87171;">🗄️ Former Employees</a>
     <a href="#sec-audit-log" class="nav-btn" style="color:var(--gold-light);">📜 Audit & Email Ledger</a>
+    <a href="#sec-taxes" class="nav-btn" style="color:var(--gold-light);">🏛️ Tax Vault (WA & IRS)</a>
   </nav>
 
   <main id="app-viewport">
@@ -570,119 +570,7 @@
       </div>
     </section>
 
-    <!-- 4. INTERACTIVE GOVERNMENT TAX VAULT -->
-    <section id="sec-taxes" class="section-container">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-        <div>
-          <h2 class="font-cinzel section-title" style="margin-bottom: 4px; border-bottom: none; padding-bottom: 0;">
-            <span>🏛️</span> Where Withholdings Go (Government Tax Vault)
-          </h2>
-          <p style="font-size: 12px; color: var(--text-muted);">
-            Taxes are calculated automatically on every payroll run. Click any agency below to remit payment or open their official government portal.
-          </p>
-        </div>
-      </div>
-
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px;">
-        
-        <!-- 1. WA L&I -->
-        <div class="card" style="border-left: 4px solid var(--gold); display: flex; flex-direction: column; justify-content: space-between;">
-          <div>
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-              <span class="badge badge-gold">1. WASHINGTON STATE L&I</span>
-              <span id="tax-accrued-lni" class="font-mono" style="font-size: 16px; font-weight: 900; color: var(--gold-light);">$0.00</span>
-            </div>
-            <h3 style="font-size: 15px; font-weight: 800; margin-top: 8px;">WA Dept of Labor & Industries</h3>
-            <div style="font-size: 12px; color: var(--text-muted); line-height: 1.7; margin: 8px 0;">
-              <div>• <strong>Risk Class:</strong> Janitorial Class 6602 ($1.75/hr composite).</div>
-              <div>• <strong>Due Date:</strong> Quarterly (Apr 30, Jul 31, Oct 31, Jan 31).</div>
-              <div>• <strong>Official Filing Site:</strong> secure.lni.wa.gov</div>
-            </div>
-          </div>
-          <div style="display: flex; gap: 6px; margin-top: 10px;">
-            <button class="btn-dark" style="flex: 1; font-size: 11px; padding: 7px;" onclick="openTaxRemittanceModal('WA L&I (Class 6602)', 'tax-accrued-lni', 'secure.lni.wa.gov')">
-              🏛️ Record Payment
-            </button>
-            <a href="https://secure.lni.wa.gov" target="_blank" class="btn-gold" style="font-size: 11px; padding: 7px; text-decoration: none;">
-              🔗 Open Portal
-            </a>
-          </div>
-        </div>
-
-        <!-- 2. IRS -->
-        <div class="card" style="border-left: 4px solid var(--blue); display: flex; flex-direction: column; justify-content: space-between;">
-          <div>
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-              <span class="badge badge-blue">2. FEDERAL IRS (FORM 941 & 940)</span>
-              <span id="tax-accrued-irs" class="font-mono" style="font-size: 16px; font-weight: 900; color: var(--blue);">$0.00</span>
-            </div>
-            <h3 style="font-size: 15px; font-weight: 800; margin-top: 8px;">Internal Revenue Service (EFTPS)</h3>
-            <div style="font-size: 12px; color: var(--text-muted); line-height: 1.7; margin: 8px 0;">
-              <div>• <strong>Covered:</strong> Fed W-4 + FICA SS (6.2%) + Medicare (1.45%) + FUTA.</div>
-              <div>• <strong>Deposit Schedule:</strong> Monthly / Quarterly Form 941.</div>
-              <div>• <strong>Official Deposit Site:</strong> EFTPS.gov</div>
-            </div>
-          </div>
-          <div style="display: flex; gap: 6px; margin-top: 10px;">
-            <button class="btn-dark" style="flex: 1; font-size: 11px; padding: 7px;" onclick="openTaxRemittanceModal('IRS Form 941 & 940', 'tax-accrued-irs', 'EFTPS.gov')">
-              🏛️ Record Deposit
-            </button>
-            <a href="https://www.eftps.gov/eftps/" target="_blank" class="btn-gold" style="font-size: 11px; padding: 7px; text-decoration: none;">
-              🔗 Open EFTPS
-            </a>
-          </div>
-        </div>
-
-        <!-- 3. WA ESD -->
-        <div class="card" style="border-left: 4px solid var(--emerald); display: flex; flex-direction: column; justify-content: space-between;">
-          <div>
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-              <span class="badge badge-emerald">3. WA ESD (PFML & CARES)</span>
-              <span id="tax-accrued-esd" class="font-mono" style="font-size: 16px; font-weight: 900; color: var(--emerald);">$0.00</span>
-            </div>
-            <h3 style="font-size: 15px; font-weight: 800; margin-top: 8px;">WA Employment Security Dept</h3>
-            <div style="font-size: 12px; color: var(--text-muted); line-height: 1.7; margin: 8px 0;">
-              <div>• <strong>Covered:</strong> WA Paid Family Leave (0.74%) + WA Cares (0.58%) + SUI.</div>
-              <div>• <strong>Due Date:</strong> End of month following quarter.</div>
-              <div>• <strong>Official Filing Site:</strong> paidleave.wa.gov & esd.wa.gov</div>
-            </div>
-          </div>
-          <div style="display: flex; gap: 6px; margin-top: 10px;">
-            <button class="btn-dark" style="flex: 1; font-size: 11px; padding: 7px;" onclick="openTaxRemittanceModal('WA ESD (PFML & Cares)', 'tax-accrued-esd', 'paidleave.wa.gov')">
-              🏛️ Record Payment
-            </button>
-            <a href="https://paidleave.wa.gov" target="_blank" class="btn-gold" style="font-size: 11px; padding: 7px; text-decoration: none;">
-              🔗 Open ESD
-            </a>
-          </div>
-        </div>
-
-        <!-- 4. WA DOR -->
-        <div class="card" style="border-left: 4px solid var(--rose); display: flex; flex-direction: column; justify-content: space-between;">
-          <div>
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-              <span class="badge badge-rose">4. WA DOR (B&O TAX)</span>
-              <span id="tax-accrued-dor" class="font-mono" style="font-size: 16px; font-weight: 900; color: var(--rose);">$0.00</span>
-            </div>
-            <h3 style="font-size: 15px; font-weight: 800; margin-top: 8px;">WA Department of Revenue</h3>
-            <div style="font-size: 12px; color: var(--text-muted); line-height: 1.7; margin: 8px 0;">
-              <div>• <strong>Covered:</strong> WA B&O Tax (1.50% on gross revenue). Company tax.</div>
-              <div>• <strong>Due Date:</strong> Quarterly close.</div>
-              <div>• <strong>Official Filing Site:</strong> secure.dor.wa.gov</div>
-            </div>
-          </div>
-          <div style="display: flex; gap: 6px; margin-top: 10px;">
-            <button class="btn-dark" style="flex: 1; font-size: 11px; padding: 7px;" onclick="openTaxRemittanceModal('WA DOR (B&O Tax)', 'tax-accrued-dor', 'secure.dor.wa.gov')">
-              🏛️ Record Payment
-            </button>
-            <a href="https://secure.dor.wa.gov" target="_blank" class="btn-gold" style="font-size: 11px; padding: 7px; text-decoration: none;">
-              🔗 Open My DOR
-            </a>
-          </div>
-        </div>
-
-      </div>
-    </section>
+    
 
   
     
@@ -799,6 +687,120 @@
       </div>
     </section>
 
+  
+    <!-- 4. INTERACTIVE GOVERNMENT TAX VAULT -->
+    <section id="sec-taxes" class="section-container">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+        <div>
+          <h2 class="font-cinzel section-title" style="margin-bottom: 4px; border-bottom: none; padding-bottom: 0;">
+            <span>🏛️</span> Where Withholdings Go (Government Tax Vault)
+          </h2>
+          <p style="font-size: 12px; color: var(--text-muted);">
+            Taxes are calculated automatically on every payroll run. Click any agency below to remit payment or open their official government portal.
+          </p>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px;">
+        
+        <!-- 1. WA L&I -->
+        <div class="card" style="border-left: 4px solid var(--gold); display: flex; flex-direction: column; justify-content: space-between;">
+          <div>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span class="badge badge-gold">1. WASHINGTON STATE L&I</span>
+              <span id="tax-accrued-lni" class="font-mono" style="font-size: 16px; font-weight: 900; color: var(--gold-light);">$0.00</span>
+            </div>
+            <h3 style="font-size: 15px; font-weight: 800; margin-top: 8px;">WA Dept of Labor & Industries</h3>
+            <div style="font-size: 12px; color: var(--text-muted); line-height: 1.7; margin: 8px 0;">
+              <div>• <strong>Risk Class:</strong> Janitorial Class 6602 ($1.75/hr composite).</div>
+              <div>• <strong>Due Date:</strong> Quarterly (Apr 30, Jul 31, Oct 31, Jan 31).</div>
+              <div>• <strong>Official Filing Site:</strong> secure.lni.wa.gov</div>
+            </div>
+          </div>
+          <div style="display: flex; gap: 6px; margin-top: 10px;">
+            <button class="btn-dark" style="flex: 1; font-size: 11px; padding: 7px;" onclick="openTaxRemittanceModal('WA L&I (Class 6602)', 'tax-accrued-lni', 'secure.lni.wa.gov')">
+              🏛️ Record Payment
+            </button>
+            <a href="https://secure.lni.wa.gov" target="_blank" class="btn-gold" style="font-size: 11px; padding: 7px; text-decoration: none;">
+              🔗 Open Portal
+            </a>
+          </div>
+        </div>
+
+        <!-- 2. IRS -->
+        <div class="card" style="border-left: 4px solid var(--blue); display: flex; flex-direction: column; justify-content: space-between;">
+          <div>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span class="badge badge-blue">2. FEDERAL IRS (FORM 941 & 940)</span>
+              <span id="tax-accrued-irs" class="font-mono" style="font-size: 16px; font-weight: 900; color: var(--blue);">$0.00</span>
+            </div>
+            <h3 style="font-size: 15px; font-weight: 800; margin-top: 8px;">Internal Revenue Service (EFTPS)</h3>
+            <div style="font-size: 12px; color: var(--text-muted); line-height: 1.7; margin: 8px 0;">
+              <div>• <strong>Covered:</strong> Fed W-4 + FICA SS (6.2%) + Medicare (1.45%) + FUTA.</div>
+              <div>• <strong>Deposit Schedule:</strong> Monthly / Quarterly Form 941.</div>
+              <div>• <strong>Official Deposit Site:</strong> EFTPS.gov</div>
+            </div>
+          </div>
+          <div style="display: flex; gap: 6px; margin-top: 10px;">
+            <button class="btn-dark" style="flex: 1; font-size: 11px; padding: 7px;" onclick="openTaxRemittanceModal('IRS Form 941 & 940', 'tax-accrued-irs', 'EFTPS.gov')">
+              🏛️ Record Deposit
+            </button>
+            <a href="https://www.eftps.gov/eftps/" target="_blank" class="btn-gold" style="font-size: 11px; padding: 7px; text-decoration: none;">
+              🔗 Open EFTPS
+            </a>
+          </div>
+        </div>
+
+        <!-- 3. WA ESD -->
+        <div class="card" style="border-left: 4px solid var(--emerald); display: flex; flex-direction: column; justify-content: space-between;">
+          <div>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span class="badge badge-emerald">3. WA ESD (PFML & CARES)</span>
+              <span id="tax-accrued-esd" class="font-mono" style="font-size: 16px; font-weight: 900; color: var(--emerald);">$0.00</span>
+            </div>
+            <h3 style="font-size: 15px; font-weight: 800; margin-top: 8px;">WA Employment Security Dept</h3>
+            <div style="font-size: 12px; color: var(--text-muted); line-height: 1.7; margin: 8px 0;">
+              <div>• <strong>Covered:</strong> WA Paid Family Leave (0.74%) + WA Cares (0.58%) + SUI.</div>
+              <div>• <strong>Due Date:</strong> End of month following quarter.</div>
+              <div>• <strong>Official Filing Site:</strong> paidleave.wa.gov & esd.wa.gov</div>
+            </div>
+          </div>
+          <div style="display: flex; gap: 6px; margin-top: 10px;">
+            <button class="btn-dark" style="flex: 1; font-size: 11px; padding: 7px;" onclick="openTaxRemittanceModal('WA ESD (PFML & Cares)', 'tax-accrued-esd', 'paidleave.wa.gov')">
+              🏛️ Record Payment
+            </button>
+            <a href="https://paidleave.wa.gov" target="_blank" class="btn-gold" style="font-size: 11px; padding: 7px; text-decoration: none;">
+              🔗 Open ESD
+            </a>
+          </div>
+        </div>
+
+        <!-- 4. WA DOR -->
+        <div class="card" style="border-left: 4px solid var(--rose); display: flex; flex-direction: column; justify-content: space-between;">
+          <div>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span class="badge badge-rose">4. WA DOR (B&O TAX)</span>
+              <span id="tax-accrued-dor" class="font-mono" style="font-size: 16px; font-weight: 900; color: var(--rose);">$0.00</span>
+            </div>
+            <h3 style="font-size: 15px; font-weight: 800; margin-top: 8px;">WA Department of Revenue</h3>
+            <div style="font-size: 12px; color: var(--text-muted); line-height: 1.7; margin: 8px 0;">
+              <div>• <strong>Covered:</strong> WA B&O Tax (1.50% on gross revenue). Company tax.</div>
+              <div>• <strong>Due Date:</strong> Quarterly close.</div>
+              <div>• <strong>Official Filing Site:</strong> secure.dor.wa.gov</div>
+            </div>
+          </div>
+          <div style="display: flex; gap: 6px; margin-top: 10px;">
+            <button class="btn-dark" style="flex: 1; font-size: 11px; padding: 7px;" onclick="openTaxRemittanceModal('WA DOR (B&O Tax)', 'tax-accrued-dor', 'secure.dor.wa.gov')">
+              🏛️ Record Payment
+            </button>
+            <a href="https://secure.dor.wa.gov" target="_blank" class="btn-gold" style="font-size: 11px; padding: 7px; text-decoration: none;">
+              🔗 Open My DOR
+            </a>
+          </div>
+        </div>
+
+      </div>
+    </section>
   </main>
 
   <!-- Download & Install Helper Modal -->
