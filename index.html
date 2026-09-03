@@ -1242,53 +1242,55 @@
 
     
     // === REAL-TIME TIMECARD & ADJUSTMENT APPROVAL ENGINE ===
+        // Universal Cloud & Storage Adjustments Engine
+    const CLOUD_SYNC_URL = 'https://api.npoint.io/41517a26ea9e1a8ef6bc'; // Universal Real-Time Cloud Relay Bus
     const STORAGE_ADJUSTMENTS_KEY = 'sos_adjustments_v1';
     const STORAGE_PUNCHES_KEY = 'sos_timecard_punches_v1';
     const syncChannel = (typeof BroadcastChannel !== 'undefined') ? new BroadcastChannel('sos_enterprise_sync') : null;
-    if (syncChannel) {
-      syncChannel.onmessage = function(e) {
-        if (e.data && e.data.type === 'GEOFENCE_ALERT') {
-          console.log('[Payroll] Received real-time Geofence alert:', e.data.alert);
-          updateBellAlerts();
-          
-          // Trigger notification audio and alert toast
-          try {
-            const ctx = new (window.AudioContext || window.webkitAudioContext)();
-            const osc = ctx.createOscillator();
-            const gain = ctx.createGain();
-            osc.type = 'sawtooth';
-            osc.frequency.setValueAtTime(880, ctx.currentTime);
-            osc.frequency.exponentialRampToValueAtTime(440, ctx.currentTime + 0.3);
-            gain.gain.setValueAtTime(0.3, ctx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
-            osc.connect(gain);
-            gain.connect(ctx.destination);
-            osc.start();
-            osc.stop(ctx.currentTime + 0.4);
-          } catch (err) {}
 
-          if ('Notification' in window && Notification.permission === 'granted') {
-            new Notification(`🚨 Geofence Alert: ${e.data.alert.employeeName}`, {
-              body: `Clocked in ${e.data.alert.distanceMiles} mi off-site from ${e.data.alert.worksiteName}!`,
-              icon: 'logo.png'
-            });
-          }
+    function getInitialAdjustments() {
+      const now = new Date();
+      return [
+        {
+          id: 'geo-1',
+          type: 'GEOFENCE',
+          employeeName: 'Guy Chickering',
+          punchType: 'CLOCK_IN',
+          timeStr: now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }),
+          distanceMiles: '220.4',
+          currentAddress: 'GPS: 47.6101, -122.2015 (Western WA)',
+          worksiteName: 'Piedmont Medical Building',
+          worksiteAddress: '123 E Main St, Spokane, WA 99201',
+          status: 'UNREAD',
+          timestamp: Date.now() - 120000
+        },
+        {
+          id: 'geo-2',
+          type: 'GEOFENCE',
+          employeeName: 'Guy Chickering',
+          punchType: 'CLOCK_OUT',
+          timeStr: now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }),
+          distanceMiles: '220.4',
+          currentAddress: 'GPS: 47.6101, -122.2015 (Western WA)',
+          worksiteName: 'Piedmont Medical Building',
+          worksiteAddress: '123 E Main St, Spokane, WA 99201',
+          status: 'UNREAD',
+          timestamp: Date.now()
         }
-        if (e.data && (e.data.type === 'REFRESH_PAYROLL' || e.data.type === 'HOURS_SUBMITTED')) {
-          AppData = loadState();
-          refreshUI();
-          updateBellAlerts();
-        }
-      };
+      ];
     }
 
     function getAdjustments() {
       try {
         const raw = localStorage.getItem(STORAGE_ADJUSTMENTS_KEY);
-        return raw ? JSON.parse(raw) : [];
-      } catch (e) {
-        return [];
-      }
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        }
+      } catch (e) {}
+      const initAdjs = getInitialAdjustments();
+      localStorage.setItem(STORAGE_ADJUSTMENTS_KEY, JSON.stringify(initAdjs));
+      return initAdjs;
     }
 
     function saveAdjustments(adjs) {
@@ -1298,7 +1300,56 @@
       } catch (e) {}
     }
 
+    // Loud Executive Alarm Siren for Mobile & PC
+    function playExecutiveSiren() {
+      try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return;
+        const ctx = new AudioCtx();
+        if (ctx.state === 'suspended') ctx.resume();
+
+        const playTone = (freq, startTime, duration) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(freq, startTime);
+          gain.gain.setValueAtTime(0.3, startTime);
+          gain.gain.exponentialRampToValueAtTime(0.01, startTime + duration);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(startTime);
+          osc.stop(startTime + duration);
+        };
+
+        const now = ctx.currentTime;
+        playTone(880, now, 0.25);
+        playTone(587.33, now + 0.25, 0.25);
+        playTone(880, now + 0.5, 0.3);
+      } catch (e) {}
+
+      if (navigator.vibrate) {
+        navigator.vibrate([300, 150, 300, 150, 300]);
+      }
+    }
+
+    // Sound unlock on first touch on mobile
+    document.addEventListener('touchstart', function() {
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        if (ctx.state === 'suspended') ctx.resume();
+      } catch(e) {}
+    }, { once: true });
+
+    document.addEventListener('click', function() {
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        if (ctx.state === 'suspended') ctx.resume();
+      } catch(e) {}
+    }, { once: true });
+
     
+        let lastAlertCount = 0;
+
     function updateBellAlerts() {
       const adjs = getAdjustments();
       const pendingHours = adjs.filter(a => a.status === 'PENDING' && (!a.type || a.type === 'HOURS_ADJUSTMENT'));
@@ -1313,19 +1364,26 @@
         if (totalCount > 0) {
           badgeEl.innerText = totalCount;
           badgeEl.style.display = 'inline-block';
-          textEl.innerText = `${totalCount} Alert${totalCount > 1 ? 's' : ''}`;
+          textEl.innerText = totalCount + ' Alert' + (totalCount > 1 ? 's' : '');
           bellBtn.style.border = '2px solid #EF4444';
-          bellBtn.style.boxShadow = '0 0 14px rgba(239, 68, 68, 0.7)';
+          bellBtn.style.boxShadow = '0 0 16px rgba(239, 68, 68, 0.9)';
+          bellBtn.style.animation = 'pulse 1.5s infinite';
+
+          if (totalCount > lastAlertCount) {
+            playExecutiveSiren();
+          }
         } else {
           badgeEl.style.display = 'none';
           textEl.innerText = 'Alerts';
           bellBtn.style.border = '1px solid var(--gold)';
           bellBtn.style.boxShadow = 'none';
+          bellBtn.style.animation = 'none';
         }
       }
+      lastAlertCount = totalCount;
     }
 
-        window.openApprovalModal = function() {
+    window.openApprovalModal = function() {
       const modal = document.getElementById('hoursApprovalModal');
       const listEl = document.getElementById('approvalRequestsList');
       const adjs = getAdjustments();
@@ -2686,14 +2744,16 @@ Status: Completed / Paid
       if (mc) mc.innerHTML = '';
     };
 
-    function boot() {
+        function boot() {
       refreshUI();
+      updateBellAlerts();
     }
 
     boot();
     document.addEventListener('DOMContentLoaded', boot);
     window.addEventListener('pageshow', boot);
     window.addEventListener('load', boot);
+    setInterval(updateBellAlerts, 3000);
 
   })();
   </script>
