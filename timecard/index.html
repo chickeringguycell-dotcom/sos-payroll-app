@@ -738,7 +738,7 @@
         address: '123 E Main St, Spokane, WA 99201',
         lat: 47.6588,
         lng: -117.4260,
-        radiusMiles: 0.15
+        radiusMiles: 0.095
       };
 
       try {
@@ -827,7 +827,7 @@
               const userLat = pos.coords.latitude;
               const userLng = pos.coords.longitude;
               const distanceMiles = calculateDistanceMiles(userLat, userLng, assignedSite.lat, assignedSite.lng);
-              const radius = assignedSite.radiusMiles || 0.15;
+              const radius = assignedSite.radiusMiles || 0.095; // 500 feet
               const isOff = distanceMiles > radius;
               
               if (punchState.activePunches[empName]) {
@@ -906,7 +906,7 @@
               const userLat = pos.coords.latitude;
               const userLng = pos.coords.longitude;
               const distanceMiles = calculateDistanceMiles(userLat, userLng, assignedSite.lat, assignedSite.lng);
-              const radius = assignedSite.radiusMiles || 0.15;
+              const radius = assignedSite.radiusMiles || 0.095; // 500 feet
               const isOff = distanceMiles > radius;
 
               if (isOff) {
