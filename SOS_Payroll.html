@@ -346,36 +346,39 @@
     </style>
 
 
-      <!-- Top Executive Header with Guaranteed Visible Bell Alert & Direct Timecard Button -->
-  <header class="top-header" style="background:#121620; border-bottom:2px solid var(--gold); padding:10px 16px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; position:sticky; top:0; z-index:1000;">
-    <div class="brand-title" style="display:flex; align-items:center; gap:8px;">
-      <span style="color: var(--gold); font-size:22px;">👑</span>
-      <div>
-        <div class="font-cinzel" style="font-weight:900; font-size:15px; color:#FFF; letter-spacing:0.5px;">SPOTLESS OFFICE SOLUTIONS LLC</div>
-        <div style="font-size:10px; font-weight:800; color:var(--gold-light); letter-spacing:1.5px;">SOS PAYROLL EXECUTIVE SUITE</div>
+        <!-- Top Executive Header with 3 Uniform Action Buttons in a Single Row -->
+  <header class="top-header" style="background:#121620; border-bottom:2px solid var(--gold); padding:10px 14px; position:sticky; top:0; z-index:1000; display:flex; flex-direction:column; gap:10px;">
+    <div class="brand-title" style="display:flex; align-items:center; justify-content:space-between; width:100%;">
+      <div style="display:flex; align-items:center; gap:8px;">
+        <span style="color: var(--gold); font-size:22px;">👑</span>
+        <div>
+          <div class="font-cinzel" style="font-weight:900; font-size:14px; color:#FFF; letter-spacing:0.5px;">SPOTLESS OFFICE SOLUTIONS LLC</div>
+          <div style="font-size:10px; font-weight:800; color:var(--gold-light); letter-spacing:1.5px;">SOS PAYROLL EXECUTIVE SUITE</div>
+        </div>
       </div>
     </div>
     
-    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-      <!-- Direct Timecard App Launcher -->
-      <a href="timecard.html" class="btn-gold" style="text-decoration:none; padding:7px 14px; font-size:12px; font-weight:900; display:inline-flex; align-items:center; gap:6px; border-radius:8px; box-shadow:0 0 10px rgba(212,175,55,0.4);">
-        ⏱️ Open Timecard
+    <!-- Equal Size 3-Button Action Row (Left to Right) -->
+    <div id="executive-button-row" style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; width:100%;">
+      <!-- 1. Open Timecard -->
+      <a href="timecard.html" id="btnOpenTimecard" class="btn-gold" style="height:40px; text-decoration:none; font-size:12px; font-weight:900; display:flex; align-items:center; justify-content:center; gap:6px; border-radius:8px; box-shadow:0 0 10px rgba(212,175,55,0.4); text-align:center; padding:0 6px; box-sizing:border-box;">
+        ⏱️ Timecard
       </a>
 
-      <!-- Dedicated Executive Alert Bell -->
-      <button id="btnPayrollBell" class="btn-dark" style="padding:7px 14px; font-size:12px; font-weight:900; position:relative; display:inline-flex; align-items:center; gap:6px; border-radius:8px; border:1.5px solid var(--gold); cursor:pointer; background:#1C222E;" onclick="openApprovalModal()">
+      <!-- 2. Alerts Bell -->
+      <button id="btnPayrollBell" class="btn-dark" style="height:40px; font-size:12px; font-weight:900; position:relative; display:flex; align-items:center; justify-content:center; gap:6px; border-radius:8px; border:1.5px solid var(--gold); cursor:pointer; background:#1C222E; text-align:center; padding:0 6px; box-sizing:border-box;" onclick="openApprovalModal()">
         🔔 <span id="bellBadgeText">Alerts</span>
         <span id="bellCounterBadge" style="display:none; position:absolute; top:-6px; right:-6px; background:#EF4444; color:#FFF; font-size:10px; font-weight:900; border-radius:10px; padding:2px 7px; border:2px solid #14171F; box-shadow:0 0 10px rgba(239,68,68,0.9);">0</span>
       </button>
 
-      <!-- Refresh / Check Updates Button -->
-      <button id="btnForceRefresh" class="btn-gold" style="padding:8px 14px; font-size:12px; font-weight:900; border-radius:8px; cursor:pointer; background:linear-gradient(135deg, #E5A93C 0%, #B8860B 100%); color:#000; box-shadow:0 0 12px rgba(229,169,60,0.6); display:inline-flex; align-items:center; gap:6px;" onclick="forceAppRefresh()" title="Purge all caches and force load latest live updates">
-        🔄 Force Refresh
+      <!-- 3. Force Refresh -->
+      <button id="btnForceRefresh" class="btn-gold" style="height:40px; font-size:12px; font-weight:900; border-radius:8px; cursor:pointer; background:linear-gradient(135deg, #E5A93C 0%, #B8860B 100%); color:#000; box-shadow:0 0 12px rgba(229,169,60,0.6); display:flex; align-items:center; justify-content:center; gap:6px; text-align:center; padding:0 6px; box-sizing:border-box;" onclick="forceAppRefresh()" title="Purge all caches and force load latest live updates">
+        🔄 Refresh
       </button>
     </div>
   </header>
 
-    <!-- Quick Jump Anchor Bar -->
+  <!-- Quick Jump Anchor Bar -->
   <nav class="nav-bar">
     <a href="#sec-cash" class="nav-btn">💰 Live Cash & $5K Cushion</a>
     <a href="#sec-timecards" class="nav-btn" style="color:var(--gold-light);">📋 Employee Timecards</a>
