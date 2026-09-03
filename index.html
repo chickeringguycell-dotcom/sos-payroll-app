@@ -1123,7 +1123,7 @@
       document.getElementById('tax-accrued-esd').innerText = formatCurrency(m.esdAccrued);
       document.getElementById('tax-accrued-dor').innerText = formatCurrency(m.dorAccrued);
 
-      // Single Unified Team Table (Owners First, then Employees)
+            // Single Unified Team Table (Owners First, then Employees)
       const teamTbody = document.getElementById('team-payroll-tbody');
       if (!AppData.team || AppData.team.length === 0) {
         teamTbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:28px; color:var(--text-muted);">No members on roster. Click "+ Add Employee" above.</td></tr>`;
@@ -1144,19 +1144,31 @@
           const badgeClass = isOwner ? 'badge-gold' : 'badge-blue';
           const labelTag = member.label ? `<span class="badge ${badgeClass}" style="margin-right:4px;">${member.label}</span>` : '';
 
+          const photo = getEmployeePhoto(member.name);
+          const parts = (member.name || 'Member').trim().split(' ');
+          const initials = parts.length > 1 ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase() : parts[0].slice(0, 2).toUpperCase();
+          const avatarHtml = photo 
+            ? `<img src="${photo}" style="width:38px; height:38px; border-radius:50%; object-fit:cover; border:1.5px solid var(--gold); box-shadow:0 0 8px rgba(212,175,55,0.4);" alt="${member.name}">`
+            : `<div style="width:38px; height:38px; border-radius:50%; background:linear-gradient(135deg, #1E2530 0%, #10141C 100%); border:1.5px solid var(--gold); display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:900; color:var(--gold-light);">${initials}</div>`;
+
           return `
             <tr style="${isOwner ? 'background: rgba(212, 175, 55, 0.04);' : ''}">
               <td>
-                <div style="display:flex; align-items:center; gap:6px;">
-                  ${labelTag}
-                  <strong style="font-size:13px; color:${isOwner ? 'var(--gold-light)' : '#FFF'};">${member.name}</strong>
-                </div>
-                <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">${member.email || 'No email'}</div>
-                <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:3px;">
-                  <span style="font-size:10px; color:var(--gold-light); font-weight:700; background:rgba(212,175,55,0.1); padding:2px 6px; border-radius:6px; border:1px solid rgba(212,175,55,0.3);">
-                    🏢 ${member.worksiteName || 'Unassigned Site'}
-                  </span>
-                  ${member.dob ? `<span style="font-size:10px; color:var(--silver); background:var(--silver-light); padding:2px 6px; border-radius:6px; border:1px solid var(--border);">🎂 DOB: ${member.dob}</span>` : ''}
+                <div style="display:flex; align-items:center; gap:10px;">
+                  ${avatarHtml}
+                  <div>
+                    <div style="display:flex; align-items:center; gap:6px;">
+                      ${labelTag}
+                      <strong style="font-size:13px; color:${isOwner ? 'var(--gold-light)' : '#FFF'};">${member.name}</strong>
+                    </div>
+                    <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">${member.email || 'No email'}</div>
+                    <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:3px;">
+                      <span style="font-size:10px; color:var(--gold-light); font-weight:700; background:rgba(212,175,55,0.1); padding:2px 6px; border-radius:6px; border:1px solid rgba(212,175,55,0.3);">
+                        🏢 ${member.worksiteName || 'Unassigned Site'}
+                      </span>
+                      ${member.dob ? `<span style="font-size:10px; color:var(--silver); background:var(--silver-light); padding:2px 6px; border-radius:6px; border:1px solid var(--border);">🎂 DOB: ${member.dob}</span>` : ''}
+                    </div>
+                  </div>
                 </div>
               </td>
               <td><span class="badge ${badgeClass}">${member.role}</span></td>
@@ -2434,7 +2446,16 @@ Net Direct Deposits Sent: ${formatCurrency(m.totalNetWages)}
       alert(`⚡ Payroll run executed! Direct deposits queued and official record emailed to sos.cleaning@outlook.com`);
     };
 
-        // === EMPLOYEE TIME CARDS HUB RENDERER ===
+            function getEmployeePhoto(empName) {
+      if (!empName) return '';
+      try {
+        return localStorage.getItem('sos_photo_' + empName.toLowerCase()) || '';
+      } catch(e) {
+        return '';
+      }
+    }
+
+    // === EMPLOYEE TIME CARDS HUB RENDERER ===
     window.populateTimecardDropdown = function() {
       const sel = document.getElementById('select-timecard-emp');
       if (!sel || !AppData.team) return;
@@ -2483,6 +2504,12 @@ Net Direct Deposits Sent: ${formatCurrency(m.totalNetWages)}
       // Adjustments
       const adjs = getAdjustments().filter(a => a.employeeName && a.employeeName.toLowerCase() === member.name.toLowerCase());
 
+            const photo = getEmployeePhoto(member.name);
+      const parts = (member.name || 'Member').trim().split(' ');
+      const initials = parts.length > 1 ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase() : parts[0].slice(0, 2).toUpperCase();
+      const largeAvatarHtml = photo 
+        ? `<img src="${photo}" style="width:64px; height:64px; border-radius:50%; object-fit:cover; border:2px solid var(--gold); box-shadow:0 0 14px rgba(212,175,55,0.5);" alt="${member.name}">`
+        : `<div style="width:64px; height:64px; border-radius:50%; background:linear-gradient(135deg, #1E2530 0%, #10141C 100%); border:2px solid var(--gold); display:flex; align-items:center; justify-content:center; font-size:20px; font-weight:900; color:var(--gold-light); box-shadow:0 0 14px rgba(212,175,55,0.3);">${initials}</div>`;
       const rate = member.hourlyRate || 0;
       const hours = member.weeklyHours || 0;
       const gross = hours * rate;
@@ -2521,8 +2548,10 @@ Net Direct Deposits Sent: ${formatCurrency(m.totalNetWages)}
 
       container.innerHTML = `
         <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:16px; border-bottom:1px solid var(--border); padding-bottom:14px; flex-wrap:wrap; gap:10px;">
-          <div>
-            <div style="display:flex; align-items:center; gap:8px;">
+          <div style="display:flex; align-items:center; gap:14px;">
+            ${largeAvatarHtml}
+            <div>
+              <div style="display:flex; align-items:center; gap:8px;">
               <span class="badge ${member.isOwner ? 'badge-gold' : 'badge-blue'}">${member.role}</span>
               <h3 class="font-cinzel" style="font-size:20px; font-weight:900; color:#FFF; margin:0;">${member.name}</h3>
             </div>
@@ -2570,6 +2599,12 @@ Net Direct Deposits Sent: ${formatCurrency(m.totalNetWages)}
       if (!member) return;
 
       const hours = member.weeklyHours || 0;
+            const photo = getEmployeePhoto(member.name);
+      const parts = (member.name || 'Member').trim().split(' ');
+      const initials = parts.length > 1 ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase() : parts[0].slice(0, 2).toUpperCase();
+      const largeAvatarHtml = photo 
+        ? `<img src="${photo}" style="width:64px; height:64px; border-radius:50%; object-fit:cover; border:2px solid var(--gold); box-shadow:0 0 14px rgba(212,175,55,0.5);" alt="${member.name}">`
+        : `<div style="width:64px; height:64px; border-radius:50%; background:linear-gradient(135deg, #1E2530 0%, #10141C 100%); border:2px solid var(--gold); display:flex; align-items:center; justify-content:center; font-size:20px; font-weight:900; color:var(--gold-light); box-shadow:0 0 14px rgba(212,175,55,0.3);">${initials}</div>`;
       const rate = member.hourlyRate || 0;
       const gross = hours * rate;
       const fedTax = gross * 0.10;
