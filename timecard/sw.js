@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sos-suite-live-v35';
+const CACHE_NAME = 'sos-suite-live-v38';
 const URLS_TO_CACHE = [
   './',
   './index.html',
@@ -6,6 +6,7 @@ const URLS_TO_CACHE = [
   './SOS_Timecard.html',
   './timecard.html',
   './timecard/index.html',
+  './sos_timecard_logo.png',
   './logo.png',
   './icon-192-tc.png',
   './icon-512-tc.png',
