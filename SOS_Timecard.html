@@ -793,7 +793,7 @@
     // ==========================================
     // THE MASTER MORPHING BUTTON ACTION HANDLER
     // ==========================================
-            function handleMasterPunch() {
+                function handleMasterPunch() {
       const empName = getActiveName();
       if (!empName) {
         alert('Please enter your name first.');
@@ -813,69 +813,77 @@
         // ------------------------------------
         if (btn) {
           btn.disabled = true;
-          btn.style.opacity = '0.9';
-          btn.style.background = 'linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%)';
-          btn.style.boxShadow = '0 0 20px rgba(59,130,246,0.6)';
+          btn.style.opacity = '0.95';
+          btn.style.background = 'linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)';
+          btn.style.boxShadow = '0 0 25px rgba(37,99,235,0.8)';
+          btn.style.color = '#FFFFFF';
         }
         if (iconEl) iconEl.innerText = '📡';
         if (textEl) textEl.innerText = 'Pinging your GPS location...';
 
+        const startTime = Date.now();
+
         const finalizeClockIn = (userLat, userLng) => {
-          const distanceMiles = calculateDistanceMiles(userLat, userLng, assignedSite.lat, assignedSite.lng);
-          const radius = assignedSite.radiusMiles || 0.095; // 500 feet
-          const isOff = distanceMiles > radius;
+          const elapsed = Date.now() - startTime;
+          const remainingDelay = Math.max(0, 1500 - elapsed);
 
-          punchState.activePunches[empName] = {
-            employee: empName,
-            clockInTime: now.getTime(),
-            clockInDateStr: now.toLocaleDateString('en-US'),
-            clockInTimeStr: now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }),
-            isOffSite: isOff,
-            locationStr: isOff 
-              ? `${distanceMiles.toFixed(1)} mi off-site (${userLat.toFixed(3)}, ${userLng.toFixed(3)})`
-              : `✓ On-Site (${assignedSite.name})`
-          };
+          setTimeout(() => {
+            const distanceMiles = calculateDistanceMiles(userLat, userLng, assignedSite.lat, assignedSite.lng);
+            const radius = assignedSite.radiusMiles || 0.095; // 500 feet
+            const isOff = distanceMiles > radius;
 
-          savePunchState();
-          if (btn) btn.disabled = false;
-          renderView();
-
-          if (isOff) {
-            const geoAlert = {
-              id: 'geo-' + Date.now(),
-              type: 'GEOFENCE',
-              employeeName: empName,
-              punchType: 'CLOCK_IN',
-              timeStr: now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }),
-              distanceMiles: distanceMiles.toFixed(1),
-              currentAddress: `GPS: ${userLat.toFixed(4)}, ${userLng.toFixed(4)}`,
-              worksiteName: assignedSite.name,
-              worksiteAddress: assignedSite.address,
-              status: 'UNREAD',
-              timestamp: Date.now()
+            punchState.activePunches[empName] = {
+              employee: empName,
+              clockInTime: now.getTime(),
+              clockInDateStr: now.toLocaleDateString('en-US'),
+              clockInTimeStr: now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }),
+              isOffSite: isOff,
+              locationStr: isOff 
+                ? `${distanceMiles.toFixed(1)} mi off-site (${userLat.toFixed(3)}, ${userLng.toFixed(3)})`
+                : `✓ On-Site (${assignedSite.name})`
             };
 
-            adjustments.unshift(geoAlert);
-            saveAdjustments();
+            savePunchState();
+            if (btn) btn.disabled = false;
+            renderView();
 
-            playAlertSound();
-            triggerPhonePushAlert(
-              '🚨 Geofence Alert: ' + empName,
-              `Clocked in ${distanceMiles.toFixed(1)} miles away from ${assignedSite.name}!`
-            );
+            if (isOff) {
+              const geoAlert = {
+                id: 'geo-' + Date.now(),
+                type: 'GEOFENCE',
+                employeeName: empName,
+                punchType: 'CLOCK_IN',
+                timeStr: now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }),
+                distanceMiles: distanceMiles.toFixed(1),
+                currentAddress: `GPS: ${userLat.toFixed(4)}, ${userLng.toFixed(4)}`,
+                worksiteName: assignedSite.name,
+                worksiteAddress: assignedSite.address,
+                status: 'UNREAD',
+                timestamp: Date.now()
+              };
 
-            if (syncChannel) {
-              syncChannel.postMessage({ type: 'GEOFENCE_ALERT', alert: geoAlert });
+              adjustments.unshift(geoAlert);
+              saveAdjustments();
+
+              playAlertSound();
+              triggerPhonePushAlert(
+                '🚨 Geofence Alert: ' + empName,
+                `Clocked in ${distanceMiles.toFixed(1)} miles away from ${assignedSite.name}!`
+              );
+
+              if (syncChannel) {
+                syncChannel.postMessage({ type: 'GEOFENCE_ALERT', alert: geoAlert });
+              }
+              broadcastToCloudBus(geoAlert);
             }
-            broadcastToCloudBus(geoAlert);
-          }
+          }, remainingDelay);
         };
 
         if (navigator.geolocation) {
           navigator.geolocation.getCurrentPosition(
             (pos) => finalizeClockIn(pos.coords.latitude, pos.coords.longitude),
             (err) => finalizeClockIn(47.6101, -122.2015),
-            { enableHighAccuracy: true, timeout: 4000, maximumAge: 0 }
+            { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
           );
         } else {
           finalizeClockIn(47.6101, -122.2015);
@@ -887,79 +895,87 @@
         // ------------------------------------
         if (btn) {
           btn.disabled = true;
-          btn.style.opacity = '0.9';
-          btn.style.background = 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)';
-          btn.style.boxShadow = '0 0 20px rgba(245,158,11,0.6)';
+          btn.style.opacity = '0.95';
+          btn.style.background = 'linear-gradient(135deg, #D97706 0%, #B45309 100%)';
+          btn.style.boxShadow = '0 0 25px rgba(217,119,6,0.8)';
+          btn.style.color = '#FFFFFF';
         }
         if (iconEl) iconEl.innerText = '📡';
         if (textEl) textEl.innerText = 'Pinging your GPS location...';
 
+        const startTime = Date.now();
+
         const finalizeClockOut = (userLat, userLng) => {
-          const diffHours = Math.max(0.01, (now.getTime() - active.clockInTime) / 3600000);
-          const roundedHours = Math.round(diffHours * 100) / 100;
-          const distanceMiles = calculateDistanceMiles(userLat, userLng, assignedSite.lat, assignedSite.lng);
-          const radius = assignedSite.radiusMiles || 0.095; // 500 feet
-          const isOff = distanceMiles > radius;
+          const elapsed = Date.now() - startTime;
+          const remainingDelay = Math.max(0, 1500 - elapsed);
 
-          const completedPunch = {
-            id: 'punch-' + Date.now(),
-            employee: empName,
-            date: now.toISOString().split('T')[0],
-            dateStr: now.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }),
-            clockIn: active.clockInTimeStr,
-            clockOut: now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }),
-            hours: roundedHours,
-            locationStr: isOff 
-              ? `${distanceMiles.toFixed(1)} mi off-site` 
-              : `On-Site (${assignedSite.name})`,
-            isOffSite: isOff,
-            timestamp: now.getTime()
-          };
+          setTimeout(() => {
+            const diffHours = Math.max(0.01, (now.getTime() - active.clockInTime) / 3600000);
+            const roundedHours = Math.round(diffHours * 100) / 100;
+            const distanceMiles = calculateDistanceMiles(userLat, userLng, assignedSite.lat, assignedSite.lng);
+            const radius = assignedSite.radiusMiles || 0.095; // 500 feet
+            const isOff = distanceMiles > radius;
 
-          punchState.history.unshift(completedPunch);
-          delete punchState.activePunches[empName];
-          savePunchState();
-
-          syncHoursToPayroll(empName, roundedHours);
-          if (btn) btn.disabled = false;
-          renderView();
-
-          if (isOff) {
-            const geoAlert = {
-              id: 'geo-' + Date.now(),
-              type: 'GEOFENCE',
-              employeeName: empName,
-              punchType: 'CLOCK_OUT',
-              timeStr: now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }),
-              distanceMiles: distanceMiles.toFixed(1),
-              currentAddress: `GPS: ${userLat.toFixed(4)}, ${userLng.toFixed(4)}`,
-              worksiteName: assignedSite.name,
-              worksiteAddress: assignedSite.address,
-              status: 'UNREAD',
-              timestamp: Date.now()
+            const completedPunch = {
+              id: 'punch-' + Date.now(),
+              employee: empName,
+              date: now.toISOString().split('T')[0],
+              dateStr: now.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }),
+              clockIn: active.clockInTimeStr,
+              clockOut: now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }),
+              hours: roundedHours,
+              locationStr: isOff 
+                ? `${distanceMiles.toFixed(1)} mi off-site` 
+                : `On-Site (${assignedSite.name})`,
+              isOffSite: isOff,
+              timestamp: now.getTime()
             };
 
-            adjustments.unshift(geoAlert);
-            saveAdjustments();
+            punchState.history.unshift(completedPunch);
+            delete punchState.activePunches[empName];
+            savePunchState();
 
-            playAlertSound();
-            triggerPhonePushAlert(
-              '🚨 Geofence Alert: ' + empName,
-              `Clocked OUT ${distanceMiles.toFixed(1)} miles away from ${assignedSite.name}!`
-            );
+            syncHoursToPayroll(empName, roundedHours);
+            if (btn) btn.disabled = false;
+            renderView();
 
-            if (syncChannel) {
-              syncChannel.postMessage({ type: 'GEOFENCE_ALERT', alert: geoAlert });
+            if (isOff) {
+              const geoAlert = {
+                id: 'geo-' + Date.now(),
+                type: 'GEOFENCE',
+                employeeName: empName,
+                punchType: 'CLOCK_OUT',
+                timeStr: now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }),
+                distanceMiles: distanceMiles.toFixed(1),
+                currentAddress: `GPS: ${userLat.toFixed(4)}, ${userLng.toFixed(4)}`,
+                worksiteName: assignedSite.name,
+                worksiteAddress: assignedSite.address,
+                status: 'UNREAD',
+                timestamp: Date.now()
+              };
+
+              adjustments.unshift(geoAlert);
+              saveAdjustments();
+
+              playAlertSound();
+              triggerPhonePushAlert(
+                '🚨 Geofence Alert: ' + empName,
+                `Clocked OUT ${distanceMiles.toFixed(1)} miles away from ${assignedSite.name}!`
+              );
+
+              if (syncChannel) {
+                syncChannel.postMessage({ type: 'GEOFENCE_ALERT', alert: geoAlert });
+              }
+              broadcastToCloudBus(geoAlert);
             }
-            broadcastToCloudBus(geoAlert);
-          }
+          }, remainingDelay);
         };
 
         if (navigator.geolocation) {
           navigator.geolocation.getCurrentPosition(
             (pos) => finalizeClockOut(pos.coords.latitude, pos.coords.longitude),
             (err) => finalizeClockOut(47.6101, -122.2015),
-            { enableHighAccuracy: true, timeout: 4000, maximumAge: 0 }
+            { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
           );
         } else {
           finalizeClockOut(47.6101, -122.2015);
