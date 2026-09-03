@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sos-suite-live-v63';
+const CACHE_NAME = 'sos-suite-live-v64';
 const URLS_TO_CACHE = [
   './',
   './index.html',

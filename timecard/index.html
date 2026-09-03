@@ -470,22 +470,47 @@
       </div>
     </div>
 
-            <!-- Box 3: Employee Profile & Enter Name -->
-    <div class="uniform-box uniform-box-gold">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:6px;">
-        <label class="form-label" style="margin-bottom:0; font-size:12px;">👤 Employee Profile</label>
-        <div style="display:flex; align-items:center; gap:6px;">
-          <span id="displayWorksiteBadge" style="font-size:11px; font-weight:700; color:var(--gold); background:rgba(212,175,55,0.15); padding:2px 8px; border-radius:6px; border:1px solid var(--gold);">
-            🏢 Piedmont Medical Building
-          </span>
-          <button onclick="handleTimecardLogout()" class="btn-dark" style="padding:3px 8px; font-size:11px; font-weight:800; color:#EF4444; border:1px solid rgba(239,68,68,0.4); border-radius:6px; background:rgba(239,68,68,0.1); cursor:pointer;">
+                <!-- Box 3: Employee Profile & Authentication Panel -->
+    <div class="uniform-box uniform-box-gold" id="authBoxContainer">
+      
+      <!-- PANEL A: LOGGED OUT (Enter Name & Birth Date) -->
+      <div id="panelLoggedOut" style="display:block;">
+        <div style="font-size:13px; font-weight:800; color:var(--gold-light); text-transform:uppercase; margin-bottom:10px; display:flex; align-items:center; gap:6px;">
+          <span>👤</span> Employee Profile — Sign In
+        </div>
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          <div>
+            <label class="form-label" style="font-size:11px; margin-bottom:4px;">Full Name</label>
+            <input type="text" id="loginNameInput" class="form-input" style="font-size:14px; font-weight:700; padding:10px 14px;" placeholder="Enter Name">
+          </div>
+          <div>
+            <label class="form-label" style="font-size:11px; margin-bottom:4px;">Date of Birth</label>
+            <input type="date" id="loginDobInput" class="form-input" style="font-size:14px; font-weight:700; padding:10px 14px; color:#FFF;">
+          </div>
+          <button onclick="handleTimecardLogin()" class="btn-action-punch btn-clock-in" style="margin-top:4px; padding:12px; font-size:14px; font-weight:900; border-radius:10px; letter-spacing:0.5px;">
+            🔑 Sign In to Timecard
+          </button>
+        </div>
+      </div>
+
+      <!-- PANEL B: LOGGED IN (Authenticated Profile & Log Out) -->
+      <div id="panelLoggedIn" style="display:none;">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+          <div>
+            <div style="font-size:11px; color:var(--text-muted); font-weight:700; text-transform:uppercase;">👤 Employee Profile</div>
+            <div id="loggedInEmpName" style="font-size:17px; font-weight:900; color:#FFF; margin-top:2px;">--</div>
+            <div id="displayWorksiteContainer" style="margin-top:4px;">
+              <span id="displayWorksiteBadge" style="font-size:11px; font-weight:700; color:var(--gold); background:rgba(212,175,55,0.15); padding:2px 8px; border-radius:6px; border:1px solid var(--gold); display:none;">
+                🏢 Worksite
+              </span>
+            </div>
+          </div>
+          <button onclick="handleTimecardLogout()" class="btn-dark" style="padding:6px 12px; font-size:12px; font-weight:800; color:#EF4444; border:1px solid rgba(239,68,68,0.4); border-radius:8px; background:rgba(239,68,68,0.1); cursor:pointer;">
             🚪 Log Out
           </button>
         </div>
       </div>
-      <div style="display:flex; gap:8px;">
-        <input type="text" id="employeeNameInput" class="form-input" style="font-size:14px; font-weight:700; padding:10px 14px;" value="Guy Chickering" placeholder="Enter Name" oninput="handleNameChange()">
-      </div>
+
     </div>
 
     <!-- Box 4: Live Real-Time Clock Station -->
@@ -651,25 +676,43 @@
       return (input && input.value.trim()) ? input.value.trim() : (currentSession ? currentSession.name : 'Guy Chickering');
     }
 
-        function handleTimecardLogout() {
+            function getActiveName() {
       try {
-        localStorage.removeItem('sos_timecard_active_emp');
-      } catch(e) {}
-      const input = document.getElementById('employeeNameInput');
-      if (input) {
-        input.value = '';
-        input.focus();
+        return localStorage.getItem('sos_timecard_active_emp') || '';
+      } catch(e) {
+        return '';
       }
-      renderView();
-      alert('🚪 Logged out of Timecard. Enter your name or tap a quick login button to sign in as yourself.');
     }
 
-    function switchEmployeeLogin(name) {
-      const input = document.getElementById('employeeNameInput');
-      if (input) {
-        input.value = name;
-        handleNameChange();
+    function handleTimecardLogin() {
+      const name = (document.getElementById('loginNameInput').value || '').trim();
+      const dob = document.getElementById('loginDobInput').value;
+
+      if (!name) {
+        alert('Please enter your full name to sign in.');
+        return;
       }
+
+      try {
+        localStorage.setItem('sos_timecard_active_emp', name);
+        if (dob) localStorage.setItem('sos_timecard_active_dob', dob);
+      } catch(e) {}
+
+      renderView();
+    }
+
+    function handleTimecardLogout() {
+      try {
+        localStorage.removeItem('sos_timecard_active_emp');
+        localStorage.removeItem('sos_timecard_active_dob');
+      } catch(e) {}
+
+      const nameInput = document.getElementById('loginNameInput');
+      const dobInput = document.getElementById('loginDobInput');
+      if (nameInput) nameInput.value = '';
+      if (dobInput) dobInput.value = '';
+
+      renderView();
     }
 
     function handleNameChange() {
@@ -756,33 +799,39 @@
       return R * c;
     }
 
-    function getEmployeeWorksite(empName) {
-      const defaultSite = {
-        id: 'site-1',
-        name: 'Piedmont Medical Building',
-        siteNumber: 'Site #01',
-        address: '123 E Main St, Spokane, WA 99201',
-        lat: 47.6588,
-        lng: -117.4260,
-        radiusMiles: 0.095
-      };
+        function getEmployeeWorksite(empName) {
+      if (!empName) return null;
 
       try {
         const raw = localStorage.getItem(STORAGE_PAYROLL_KEY);
-        if (!raw) return defaultSite;
+        if (!raw) return null;
         const pData = JSON.parse(raw);
-        if (!pData || !pData.team) return defaultSite;
+        if (!pData || !pData.team) return null;
 
-        const member = pData.team.find(m => m.name.toLowerCase() === (empName || '').toLowerCase());
+        const member = pData.team.find(m => m.name.toLowerCase() === empName.toLowerCase());
         if (member && member.worksiteId && pData.worksites) {
           const site = pData.worksites.find(s => s.id === member.worksiteId);
           if (site) return site;
         }
-        if (pData.worksites && pData.worksites.length > 0) {
-          return pData.worksites[0];
+        if (member && member.worksiteName && pData.worksites) {
+          const site = pData.worksites.find(s => s.name.toLowerCase() === member.worksiteName.toLowerCase());
+          if (site) return site;
         }
       } catch (e) {}
-      return defaultSite;
+
+      // Hardcoded fallback only for Guy Chickering (Spokane Facility)
+      if (empName.toLowerCase() === 'guy chickering') {
+        return {
+          id: 'site-1',
+          name: 'Piedmont Medical Building',
+          address: '123 E Main St, Spokane, WA 99201',
+          lat: 47.6588,
+          lng: -117.4260,
+          radiusMiles: 0.095
+        };
+      }
+
+      return null;
     }
 
     function playAlertSound() {
@@ -1054,35 +1103,85 @@
       } catch (e) {}
     }
 
-    function renderView() {
+            function renderView() {
       const empName = getActiveName();
-      const assignedSite = getEmployeeWorksite(empName);
-      
+      const panelLoggedOut = document.getElementById('panelLoggedOut');
+      const panelLoggedIn = document.getElementById('panelLoggedIn');
+      const nameDisp = document.getElementById('loggedInEmpName');
       const siteBadge = document.getElementById('displayWorksiteBadge');
-      if (siteBadge) siteBadge.innerText = '🏢 ' + assignedSite.name;
-
-      const activePunch = getActivePunch(empName);
       const masterBtn = document.getElementById('btnMasterPunch');
       const masterIcon = document.getElementById('masterPunchIcon');
       const masterText = document.getElementById('masterPunchText');
       const activeArea = document.getElementById('activeShiftArea');
       const stampEl = document.getElementById('clockInTimestamp');
 
+      if (!empName) {
+        // ------------------------------------
+        // STATE 1: LOGGED OUT
+        // ------------------------------------
+        if (panelLoggedOut) panelLoggedOut.style.display = 'block';
+        if (panelLoggedIn) panelLoggedIn.style.display = 'none';
+        if (siteBadge) siteBadge.style.display = 'none';
+
+        if (masterBtn) {
+          masterBtn.className = 'btn-action-punch btn-clock-in';
+          masterBtn.disabled = true;
+          masterBtn.style.opacity = '0.5';
+        }
+        if (masterIcon) masterIcon.innerText = '🔒';
+        if (masterText) masterText.innerText = 'PLEASE SIGN IN FIRST';
+        if (activeArea) activeArea.style.display = 'none';
+
+        const historyList = document.getElementById('historyList');
+        if (historyList) {
+          historyList.innerHTML = '<div style="text-align:center; padding:15px; color:var(--text-muted); font-size:13px;">Sign in above with your name and birth date to view your shifts.</div>';
+        }
+        const statToday = document.getElementById('statTodayHours');
+        const statWeek = document.getElementById('statWeekHours');
+        if (statToday) statToday.innerText = '0.00 h';
+        if (statWeek) statWeek.innerText = '0.00 h';
+        return;
+      }
+
+      // ------------------------------------
+      // STATE 2: LOGGED IN
+      // ------------------------------------
+      if (panelLoggedOut) panelLoggedOut.style.display = 'none';
+      if (panelLoggedIn) panelLoggedIn.style.display = 'block';
+      if (nameDisp) nameDisp.innerText = empName;
+
+      const assignedSite = getEmployeeWorksite(empName);
+      if (siteBadge) {
+        if (assignedSite && assignedSite.name) {
+          siteBadge.innerText = '🏢 ' + assignedSite.name;
+          siteBadge.style.display = 'inline-block';
+        } else {
+          siteBadge.style.display = 'none'; // No worksite assigned yet
+        }
+      }
+
+      if (masterBtn && !isPunchInProgress) {
+        masterBtn.disabled = false;
+        masterBtn.style.opacity = '1.0';
+      }
+
+      const activePunch = getActivePunch(empName);
+
       if (activePunch) {
         // ACTIVE SHIFT STATE -> RED CLOCK OUT BUTTON
-        if (masterBtn) {
+        if (masterBtn && !isPunchInProgress) {
           masterBtn.className = 'btn-action-punch btn-clock-out';
         }
-        if (masterIcon) masterIcon.innerText = '⏹';
+        if (masterIcon && !isPunchInProgress) masterIcon.innerText = '⏹';
         if (masterText && !isPunchInProgress) masterText.innerText = 'CLOCK OUT';
         if (activeArea) activeArea.style.display = 'block';
         if (stampEl) stampEl.innerText = 'Clocked in at: ' + activePunch.clockInTimeStr + ' (' + (activePunch.clockInDateStr || 'Today') + ')';
       } else {
         // NOT CLOCKED IN -> GREEN CLOCK IN BUTTON
-        if (masterBtn) {
+        if (masterBtn && !isPunchInProgress) {
           masterBtn.className = 'btn-action-punch btn-clock-in';
         }
-        if (masterIcon) masterIcon.innerText = '▶';
+        if (masterIcon && !isPunchInProgress) masterIcon.innerText = '▶';
         if (masterText && !isPunchInProgress) masterText.innerText = 'CLOCK IN';
         if (activeArea) activeArea.style.display = 'none';
       }
