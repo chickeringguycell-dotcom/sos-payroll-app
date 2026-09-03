@@ -366,7 +366,7 @@
       </button>
 
       <!-- Refresh / Check Updates Button -->
-      <button class="btn-dark" style="padding:7px 10px; font-size:11px; font-weight:800; border-radius:8px;" onclick="forceAppRefresh()" title="Check for latest live updates and refresh cache">
+      <button id="btnForceRefresh" class="btn-dark" style="padding:7px 10px; font-size:11px; font-weight:800; border-radius:8px; border:1px solid var(--gold); cursor:pointer;" onclick="forceAppRefresh()" title="Check for latest live updates and refresh cache">
         🔄 Refresh
       </button>
     </div>
@@ -837,14 +837,14 @@
   <!-- JAVASCRIPT ENGINE -->
   <script>
 
-    // === AUTO CACHE PURGE & FRESH PWA REGISTRATION ===
+        // === INSTANT AUTO CACHE PURGE & FRESH PWA REGISTRATION ===
     (function() {
       if ('caches' in window) {
         caches.keys().then((names) => {
           names.forEach((name) => {
-            if (name !== 'sos-payroll-v8') {
+            if (!name.includes('sos-suite-live-v88')) {
               caches.delete(name);
-              console.log('Cleared old cache:', name);
+              console.log('Purged old cache:', name);
             }
           });
         });
@@ -3040,36 +3040,29 @@ Status: Completed / Paid
       if (mc) mc.innerHTML = '';
     };
 
-            function forceAppRefresh() {
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.getRegistrations().then(function(registrations) {
-          for (let registration of registrations) {
-            registration.unregister();
-          }
-        });
-      }
-      if ('caches' in window) {
-        caches.keys().then(function(names) {
-          for (let name of names) caches.delete(name);
-        });
-      }
-      window.location.reload(true);
-    }
+                async function forceAppRefresh() {
+      try {
+        const btn = document.getElementById('btnForceRefresh');
+        if (btn) btn.innerText = '⏳ Updating...';
+      } catch(e) {}
 
-        function forceAppRefresh() {
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.getRegistrations().then(function(registrations) {
+      try {
+        if ('serviceWorker' in navigator) {
+          const registrations = await navigator.serviceWorker.getRegistrations();
           for (let registration of registrations) {
-            registration.unregister();
+            await registration.unregister();
           }
-        });
-      }
-      if ('caches' in window) {
-        caches.keys().then(function(names) {
-          for (let name of names) caches.delete(name);
-        });
-      }
-      window.location.reload(true);
+        }
+        if ('caches' in window) {
+          const names = await caches.keys();
+          for (let name of names) {
+            await caches.delete(name);
+          }
+        }
+      } catch (e) {}
+
+      const cleanUrl = window.location.href.split('?')[0];
+      window.location.href = cleanUrl + '?ts=' + Date.now();
     }
 
     function boot() {

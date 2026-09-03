@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sos-suite-live-v87';
+const CACHE_NAME = 'sos-suite-live-v88';
 const URLS_TO_CACHE = [
   './',
   './index.html',
@@ -46,52 +46,38 @@ self.addEventListener('message', (event) => {
   }
 });
 
-// Rich System Push Notification Handler
-self.addEventListener('push', (event) => {
-  let payload = { title: '🚨 SOS Geofence Violation Alert', body: 'A cleaner has clocked in/out from an unauthorized off-site location!' };
-  if (event.data) {
-    try {
-      payload = event.data.json();
-    } catch(e) {
-      payload.body = event.data.text();
-    }
+// Network-First for HTML navigation so updates appear immediately
+self.addEventListener('fetch', (event) => {
+  if (event.request.mode === 'navigate' || event.request.destination === 'document' || event.request.url.includes('.html')) {
+    event.respondWith(
+      fetch(event.request)
+        .then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200) {
+            const responseClone = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(event.request, responseClone);
+            });
+          }
+          return networkResponse;
+        })
+        .catch(() => caches.match(event.request))
+    );
+    return;
   }
 
-  const options = {
-    body: payload.body,
-    icon: './logo.png',
-    badge: './logo.png',
-    vibrate: [400, 200, 400, 200, 400],
-    requireInteraction: true,
-    data: { url: './index.html?v=87' }
-  };
-
-  event.waitUntil(
-    self.registration.showNotification(payload.title, options)
-  );
-});
-
-self.addEventListener('notificationclick', (event) => {
-  event.notification.close();
-  event.waitUntil(
-    clients.openWindow(event.notification.data && event.notification.data.url ? event.notification.data.url : './')
-  );
-});
-
-self.addEventListener('fetch', (event) => {
+  // Stale-while-revalidate for assets
   event.respondWith(
-    fetch(event.request)
-      .then((networkResponse) => {
-        if (networkResponse && networkResponse.status === 200 && event.request.method === 'GET') {
+    caches.match(event.request).then((cachedResponse) => {
+      const fetchPromise = fetch(event.request).then((networkResponse) => {
+        if (networkResponse && networkResponse.status === 200) {
           const responseClone = networkResponse.clone();
           caches.open(CACHE_NAME).then((cache) => {
             cache.put(event.request, responseClone);
           });
         }
         return networkResponse;
-      })
-      .catch(() => {
-        return caches.match(event.request);
-      })
+      }).catch(() => {});
+      return cachedResponse || fetchPromise;
+    })
   );
 });
