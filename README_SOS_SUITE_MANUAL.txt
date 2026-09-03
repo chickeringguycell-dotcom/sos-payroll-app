@@ -97,12 +97,21 @@ Share these 3 steps with cleaners:
 *Indoor GPS Note: If working in a basement with weak satellite signal, the app automatically falls back to Wi-Fi/cellular triangulation so cleaners are never locked out.
 
 ================================================================================
-6. HOURS CALCULATION & $5,000 SAFETY CUSHION
+6. HOURS CALCULATION & $5,000 EMERGENCY BUSINESS & PAYROLL RESERVE
 ================================================================================
-• Live Checking Balance: Shows business checking cash.
-• Untouchable Safety Cushion ($5,000): A permanently locked buffer that prevents overdrafts.
-• Free & Clear Cash: Bank Balance minus Payroll Due minus Taxes Accrued minus $5,000 Cushion.
-• Weekly Hours: Automatically populated from Timecard punches, or editable manually by managers.
+STRICT BUSINESS POLICY ON THE $5,000 CUSHION:
+The $5,000 Cushion is not personal money for the owners—it is the Dedicated Emergency Business & Payroll Reserve.
+
+AUTHORIZED USES:
+1. Guaranteed Cleaner Payroll Backstop: If client payments are delayed or cash is tight, cleaner wages can be drawn directly from this $5,000 reserve so no employee ever misses a paycheck.
+2. Crucial Job Site Equipment & Supplies: Buying essential supplies that cannot wait (trash bags, trash cans, mop heads, commercial vacuums, cleaning chemicals).
+3. Emergency Facility Needs: Equipment repairs or urgent job site needs.
+
+STRICTLY PROHIBITED:
+• Zero Personal Withdrawals: Neither owner may pull from this $5,000 reserve for personal expenses (no sodas, personal lunches, home furniture, or non-business items). It must remain standing in the business account.
+
+FREE & CLEAR CASH FORMULA:
+Free Operating Cash = Bank Balance minus Net Payroll Due minus Taxes Accrued minus $5,000 Emergency Reserve.
 
 ================================================================================
 7. GOVERNMENT TAX VAULT BREAKDOWN (WA STATE & FEDERAL)
