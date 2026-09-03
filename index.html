@@ -1302,12 +1302,31 @@
       } catch (e) {}
     }
 
-    // Loud Executive Alarm Siren for Mobile & PC
+        // Persistent Unthrottled Mobile Notification & Siren Engine
+    let globalAudioCtx = null;
+
+    function getAudioContext() {
+      try {
+        if (!globalAudioCtx) {
+          const AudioCtx = window.AudioContext || window.webkitAudioContext;
+          if (AudioCtx) globalAudioCtx = new AudioCtx();
+        }
+        if (globalAudioCtx && globalAudioCtx.state === 'suspended') {
+          globalAudioCtx.resume();
+        }
+      } catch (e) {}
+      return globalAudioCtx;
+    }
+
+    // Unlock audio immediately on user interaction
+    ['touchstart', 'touchend', 'mousedown', 'click', 'keydown'].forEach(evt => {
+      document.addEventListener(evt, () => getAudioContext(), { passive: true });
+    });
+
     function playExecutiveSiren() {
       try {
-        const AudioCtx = window.AudioContext || window.webkitAudioContext;
-        if (!AudioCtx) return;
-        const ctx = new AudioCtx();
+        const ctx = getAudioContext();
+        if (!ctx) return;
         if (ctx.state === 'suspended') ctx.resume();
 
         const playTone = (freq, startTime, duration) => {
@@ -1315,7 +1334,7 @@
           const gain = ctx.createGain();
           osc.type = 'sawtooth';
           osc.frequency.setValueAtTime(freq, startTime);
-          gain.gain.setValueAtTime(0.3, startTime);
+          gain.gain.setValueAtTime(0.35, startTime);
           gain.gain.exponentialRampToValueAtTime(0.01, startTime + duration);
           osc.connect(gain);
           gain.connect(ctx.destination);
@@ -1324,30 +1343,47 @@
         };
 
         const now = ctx.currentTime;
-        playTone(880, now, 0.25);
-        playTone(587.33, now + 0.25, 0.25);
-        playTone(880, now + 0.5, 0.3);
+        playTone(950, now, 0.25);
+        playTone(620, now + 0.25, 0.25);
+        playTone(950, now + 0.5, 0.35);
       } catch (e) {}
 
       if (navigator.vibrate) {
-        navigator.vibrate([300, 150, 300, 150, 300]);
+        navigator.vibrate([400, 150, 400, 150, 400]);
       }
     }
 
-    // Sound unlock on first touch on mobile
-    document.addEventListener('touchstart', function() {
-      try {
-        const ctx = new (window.AudioContext || window.webkitAudioContext)();
-        if (ctx.state === 'suspended') ctx.resume();
-      } catch(e) {}
-    }, { once: true });
+    function firePersistentPhoneNotification(title, body) {
+      if (!('Notification' in window)) return;
 
-    document.addEventListener('click', function() {
-      try {
-        const ctx = new (window.AudioContext || window.webkitAudioContext)();
-        if (ctx.state === 'suspended') ctx.resume();
-      } catch(e) {}
-    }, { once: true });
+      const triggerNotif = () => {
+        if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+          navigator.serviceWorker.ready.then(reg => {
+            reg.showNotification(title, {
+              body: body,
+              icon: 'logo.png',
+              badge: 'logo.png',
+              tag: 'sos-alert-' + Date.now(),
+              renotify: true,
+              requireInteraction: true,
+              vibrate: [400, 200, 400, 200, 400]
+            }).catch(() => {
+              new Notification(title, { body, icon: 'logo.png', tag: 'sos-alert-' + Date.now() });
+            });
+          });
+        } else {
+          new Notification(title, { body, icon: 'logo.png', tag: 'sos-alert-' + Date.now() });
+        }
+      };
+
+      if (Notification.permission === 'granted') {
+        triggerNotif();
+      } else if (Notification.permission !== 'denied') {
+        Notification.requestPermission().then(perm => {
+          if (perm === 'granted') triggerNotif();
+        });
+      }
+    }
 
     
         let lastAlertCount = 0;
