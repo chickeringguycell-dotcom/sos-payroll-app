@@ -793,7 +793,14 @@
     // ==========================================
     // THE MASTER MORPHING BUTTON ACTION HANDLER
     // ==========================================
-                    let isPunchInProgress = false;
+                        let isHistoryExpanded = false;
+
+    function toggleHistoryExpand() {
+      isHistoryExpanded = !isHistoryExpanded;
+      renderView();
+    }
+
+    let isPunchInProgress = false;
 
     function handleMasterPunch() {
       if (isPunchInProgress) return;
@@ -1073,28 +1080,37 @@
       if (statToday) statToday.innerText = todayHours.toFixed(2) + ' h';
       if (statWeek) statWeek.innerText = weekHours.toFixed(2) + ' h';
 
-      const historyList = document.getElementById('historyList');
+            const historyList = document.getElementById('historyList');
       if (historyList) {
         const allItems = [
-          ...empHistory.map(p => ({ type: 'PUNCH', dateStr: p.dateStr || p.date, title: 'Shift (' + p.clockIn + ' - ' + p.clockOut + ')', hours: p.hours || 0, status: 'LOGGED_SHIFT', timestamp: p.timestamp || Date.now(), locationStr: p.locationStr, isOffSite: p.isOffSite })),
-          ...(adjustments || []).filter(a => a && a.employeeName && a.employeeName.toLowerCase() === empName.toLowerCase()).map(a => ({ type: 'ADJ', dateStr: a.dateDisplay || a.date, title: 'Manual Request: "' + a.reason + '"', hours: a.hours || 0, status: a.status, timestamp: a.timestamp || Date.now() }))
+          ...empHistory.map(p => ({ type: 'PUNCH', isoDate: p.date, dateStr: p.dateStr || p.date, title: 'Shift (' + p.clockIn + ' - ' + p.clockOut + ')', hours: p.hours || 0, status: 'LOGGED_SHIFT', timestamp: p.timestamp || Date.now(), locationStr: p.locationStr, isOffSite: p.isOffSite })),
+          ...(adjustments || []).filter(a => a && a.employeeName && a.employeeName.toLowerCase() === empName.toLowerCase()).map(a => ({ type: 'ADJ', isoDate: a.date, dateStr: a.dateDisplay || a.date, title: 'Manual Request: "' + a.reason + '"', hours: a.hours || 0, status: a.status, timestamp: a.timestamp || Date.now() }))
         ];
 
         allItems.sort((a,b) => (b.timestamp || 0) - (a.timestamp || 0));
 
+        const todayItems = allItems.filter(item => item.isoDate === todayIso);
+        const pastItems = allItems.filter(item => item.isoDate !== todayIso);
+        const visibleItems = isHistoryExpanded ? allItems : (todayItems.length > 0 ? todayItems : allItems.slice(0, 1));
+
         if (allItems.length === 0) {
           historyList.innerHTML = '<div style="text-align:center; padding:15px; color:var(--text-muted); font-size:13px;">No punches logged yet for this week.</div>';
         } else {
-          historyList.innerHTML = allItems.slice(0, 10).map(item => {
+          let rowsHtml = visibleItems.map(item => {
             let badgeHtml = '';
-            if (item.status === 'LOGGED_SHIFT') badgeHtml = '<span style="font-size:10px; font-weight:800; color:#10B981; background:rgba(16,185,129,0.15); padding:2px 6px; border-radius:4px; border:1px solid #10B981;">⏱ Logged Shift</span>';
-            else if (item.status === 'PENDING') badgeHtml = '<span style="font-size:10px; font-weight:800; color:#F59E0B; background:rgba(245,158,11,0.15); padding:2px 6px; border-radius:4px; border:1px solid #F59E0B;">⏳ Pending Approval</span>';
+            if (item.status === 'LOGGED_SHIFT') badgeHtml = '<span style="font-size:10px; font-weight:800; color:#10B981; background:rgba(16,185,129,0.15); padding:2px 6px; border-radius:4px; border:1px solid #10B981;">⏱ Logged</span>';
+            else if (item.status === 'PENDING') badgeHtml = '<span style="font-size:10px; font-weight:800; color:#F59E0B; background:rgba(245,158,11,0.15); padding:2px 6px; border-radius:4px; border:1px solid #F59E0B;">⏳ Pending</span>';
             else if (item.status === 'APPROVED') badgeHtml = '<span style="font-size:10px; font-weight:800; color:#10B981; background:rgba(16,185,129,0.15); padding:2px 6px; border-radius:4px; border:1px solid #10B981;">✅ Approved (+' + item.hours.toFixed(2) + 'h)</span>';
             else if (item.status === 'DENIED') badgeHtml = '<span style="font-size:10px; font-weight:800; color:#EF4444; background:rgba(239,68,68,0.15); padding:2px 6px; border-radius:4px; border:1px solid #EF4444;">❌ Denied</span>';
 
+            const isToday = item.isoDate === todayIso;
+
             return '<div style="display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid var(--silver-border);">' +
               '<div>' +
-                '<div style="font-weight:700; font-size:13px; color:var(--text-main);">' + item.dateStr + '</div>' +
+                '<div style="font-weight:700; font-size:13px; color:var(--text-main); display:flex; align-items:center; gap:6px;">' +
+                  (isToday ? '<span style="background:rgba(212,175,55,0.2); color:var(--gold); font-size:10px; font-weight:900; padding:1px 6px; border-radius:4px; border:1px solid var(--gold);">TODAY</span>' : '') +
+                  item.dateStr +
+                '</div>' +
                 '<div style="font-size:11px; color:var(--silver);">' + item.title + '</div>' +
                 (item.locationStr ? '<div style="font-size:10px; color:' + (item.isOffSite ? '#EF4444' : '#10B981') + '; font-weight:700; margin-top:2px;">📍 ' + item.locationStr + '</div>' : '') +
               '</div>' +
@@ -1104,6 +1120,17 @@
               '</div>' +
             '</div>';
           }).join('');
+
+          let toggleBtnHtml = '';
+          if (pastItems.length > 0 || (allItems.length > 1 && !isHistoryExpanded)) {
+            toggleBtnHtml = `
+              <button onclick="toggleHistoryExpand()" class="btn-dark" style="width:100%; margin-top:10px; padding:8px 12px; font-size:12px; font-weight:800; color:var(--gold-light); display:flex; align-items:center; justify-content:center; gap:6px; border:1px solid var(--gold); border-radius:8px; cursor:pointer; background:linear-gradient(180deg, #1C222E 0%, #10141C 100%);">
+                <span>${isHistoryExpanded ? '▲ Minimize to Today Only' : `▼ View Full Week History (${pastItems.length} Earlier Days)`}</span>
+              </button>
+            `;
+          }
+
+          historyList.innerHTML = rowsHtml + toggleBtnHtml;
         }
       }
     }

@@ -367,6 +367,7 @@
   <!-- Quick Jump Anchor Bar -->
   <nav class="nav-bar">
     <a href="#sec-cash" class="nav-btn">💰 Live Cash & $5K Cushion</a>
+    <a href="#sec-timecards" class="nav-btn" style="color:var(--gold-light);">📋 Employee Timecards</a>
     <a href="#sec-team" class="nav-btn">👥 Team, Owners & Employee Payroll</a>
     <a href="#sec-expenses" class="nav-btn">🧾 Business Expenses & Receipts</a>
     <a href="#sec-taxes" class="nav-btn">🏛️ Tax Vault (WA & IRS)</a>
@@ -1173,7 +1174,8 @@
               <td class="font-mono" style="color:var(--emerald); font-weight:900; font-size:14px;">${formatCurrency(net)}</td>
               <td>
                 <div style="display:flex; gap:4px;">
-                  <button class="btn-gold" style="padding:4px 8px; font-size:11px;" onclick="emailMemberPaystub(${i})">📧 Stub</button>
+                  <button class="btn-gold" style="padding:4px 8px; font-size:11px;" onclick="openEmployeeTimecardModal('${member.name}')">📋 Timecard</button>
+                  <button class="btn-dark" style="padding:4px 8px; font-size:11px;" onclick="emailMemberPaystub(${i})">📧 Stub</button>
                   <button class="btn-dark" style="padding:4px 6px; font-size:11px;" onclick="openEditMemberModal(${i})">✏️</button>
                   ${!isOwner ? `<button class="btn-rose" style="padding:4px 8px; font-size:11px; font-weight:800;" title="Terminate / Archive Employee" onclick="openTerminateModal(${i})">🗑️ Archive</button>` : ''}
                 </div>
@@ -2430,6 +2432,137 @@ Net Direct Deposits Sent: ${formatCurrency(m.totalNetWages)}
 
       sendBusinessNotification(`Team Payroll Run - ${formatCurrency(m.totalNetWages)}`, summary);
       alert(`⚡ Payroll run executed! Direct deposits queued and official record emailed to sos.cleaning@outlook.com`);
+    };
+
+        // === EMPLOYEE TIME CARDS HUB RENDERER ===
+    window.populateTimecardDropdown = function() {
+      const sel = document.getElementById('select-timecard-emp');
+      if (!sel || !AppData.team) return;
+
+      const currentVal = sel.value;
+      sel.innerHTML = AppData.team.map((m, idx) => `
+        <option value="${m.name}" ${idx === 0 && !currentVal ? 'selected' : (m.name === currentVal ? 'selected' : '')}>
+          ${m.name} (${m.role}) — ${Number(m.weeklyHours || 0).toFixed(2)} hrs
+        </option>
+      `).join('');
+
+      if (sel.value) {
+        renderSelectedEmployeeTimecard(sel.value);
+      }
+    };
+
+    window.openEmployeeTimecardModal = function(empName) {
+      const sel = document.getElementById('select-timecard-emp');
+      if (sel) sel.value = empName;
+      renderSelectedEmployeeTimecard(empName);
+      scrollToSection('sec-timecards');
+    };
+
+    window.renderSelectedEmployeeTimecard = function(empName) {
+      const container = document.getElementById('timecard-inspector-content');
+      if (!container) return;
+
+      const member = AppData.team.find(m => m.name.toLowerCase() === (empName || '').toLowerCase());
+      if (!member) {
+        container.innerHTML = '<div style="text-align:center; padding:20px; color:var(--text-muted);">Employee record not found.</div>';
+        return;
+      }
+
+      // Read timecard storage
+      let punches = [];
+      try {
+        const raw = localStorage.getItem('sos_timecard_punches_v1');
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed && parsed.history) {
+            punches = parsed.history.filter(p => p.employee.toLowerCase() === member.name.toLowerCase());
+          }
+        }
+      } catch(e) {}
+
+      // Adjustments
+      const adjs = getAdjustments().filter(a => a.employeeName && a.employeeName.toLowerCase() === member.name.toLowerCase());
+
+      const rate = member.hourlyRate || 0;
+      const hours = member.weeklyHours || 0;
+      const gross = hours * rate;
+
+      let punchesHtml = '';
+      if (punches.length === 0 && adjs.length === 0) {
+        punchesHtml = '<tr><td colspan="6" style="text-align:center; padding:18px; color:var(--text-muted);">No shift punches recorded yet for this weekly cycle.</td></tr>';
+      } else {
+        punchesHtml = punches.map(p => `
+          <tr>
+            <td><strong>${p.dateStr || p.date}</strong></td>
+            <td><span class="badge badge-emerald">▶ ${p.clockIn}</span></td>
+            <td><span class="badge badge-rose">⏹ ${p.clockOut}</span></td>
+            <td class="font-mono" style="font-weight:800; color:var(--gold-light);">${Number(p.hours).toFixed(2)} hrs</td>
+            <td>
+              <span style="font-size:11px; color:${p.isOffSite ? '#EF4444' : '#34D399'}; font-weight:700;">
+                ${p.isOffSite ? '⚠️ ' + (p.locationStr || 'Off-Site Geofence') : '✓ ' + (p.locationStr || member.worksiteName || 'On-Site')}
+              </span>
+            </td>
+            <td><span class="badge badge-emerald">✓ Verified Shift</span></td>
+          </tr>
+        `).join('');
+
+        if (adjs.length > 0) {
+          punchesHtml += adjs.map(a => `
+            <tr style="background:rgba(212,175,55,0.04);">
+              <td><strong>${a.dateDisplay || a.date || 'Adjustment'}</strong></td>
+              <td colspan="2"><span style="font-size:11px; color:var(--silver);">Manual Request: "${a.reason || 'Hours adjustment'}"</span></td>
+              <td class="font-mono" style="font-weight:800; color:var(--gold-light);">+${Number(a.hours || 0).toFixed(2)} hrs</td>
+              <td><span style="font-size:11px; color:var(--gold);">Owner Adjustment</span></td>
+              <td><span class="badge ${a.status === 'APPROVED' ? 'badge-emerald' : (a.status === 'PENDING' ? 'badge-gold' : 'badge-rose')}">${a.status}</span></td>
+            </tr>
+          `).join('');
+        }
+      }
+
+      container.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:16px; border-bottom:1px solid var(--border); padding-bottom:14px; flex-wrap:wrap; gap:10px;">
+          <div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span class="badge ${member.isOwner ? 'badge-gold' : 'badge-blue'}">${member.role}</span>
+              <h3 class="font-cinzel" style="font-size:20px; font-weight:900; color:#FFF; margin:0;">${member.name}</h3>
+            </div>
+            <div style="font-size:12px; color:var(--silver); margin-top:4px;">
+              🏢 <strong>Assigned Facility:</strong> ${member.worksiteName || 'Piedmont Medical Building'} • 💵 <strong>Pay Rate:</strong> $${rate.toFixed(2)}/hr
+            </div>
+            <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">
+              📧 ${member.email || 'No email registered'} • 🏦 ${member.bankName || 'Direct Deposit'} (Acct: ***${member.account ? member.account.slice(-4) : 'on file'})
+            </div>
+          </div>
+          <div style="display:flex; gap:8px; align-items:center;">
+            <div style="text-align:right; margin-right:8px;">
+              <div style="font-size:11px; color:var(--text-muted);">TOTAL WEEKLY HOURS</div>
+              <div class="font-mono" style="font-size:22px; font-weight:900; color:var(--emerald);">${hours.toFixed(2)} hrs</div>
+              <div class="font-mono" style="font-size:12px; font-weight:700; color:var(--gold-light);">Gross: $${gross.toFixed(2)}</div>
+            </div>
+            <button class="btn-gold" onclick="emailMemberPaystub(${AppData.team.indexOf(member)})" style="padding:8px 14px; font-size:12px; font-weight:900;">
+              📧 Email Paystub & Timecard
+            </button>
+          </div>
+        </div>
+
+        <div class="table-box">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Date / Shift</th>
+                <th>Clock In</th>
+                <th>Clock Out</th>
+                <th>Hours Worked</th>
+                <th>Worksite & GPS Geofence Status</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${punchesHtml}
+            </tbody>
+          </table>
+        </div>
+      `;
     };
 
     window.emailMemberPaystub = function(index) {
