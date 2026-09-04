@@ -13,9 +13,11 @@
     owners: 'sos_authorized_owners_v1'
   };
 
-  // Official Verified Dual Owner Phone Numbers
-  const OWNER_GUY_PHONE = '4255286820';       // (425) 528-6820 (Guy)
-  const OWNER_JACQUISE_PHONE = '2065780727';  // (206) 578-0727 (Jacquise / Co-Owner)
+    // Official Verified Dual Owner Carrier Endpoints
+  const OWNER_GUY_PHONE = '4255286820';       // (425) 528-6820 (Guy - Verizon)
+  const OWNER_JACQUISE_PHONE = '2065780727';  // (206) 578-0727 (Jacquise - T-Mobile)
+  const OWNER_GUY_CARRIER_GATEWAYS = ['4255286820@vtext.com', '4255286820@vzwpix.com'];
+  const OWNER_JACQUISE_CARRIER_GATEWAYS = ['2065780727@tmomail.net'];
   const URGENT_PUSH_TOPIC = 'https://ntfy.sh/sos_spotless_alerts_bus_v1';
   const OFFICIAL_EMAIL = 'sos.cleaning@outlook.com';
 

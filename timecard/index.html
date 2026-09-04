@@ -1435,125 +1435,61 @@
       }
     }
 
-                // Dual-Owner Automated SMS Text Dispatcher & Cloud Alert Relay
+                    // Dual-Owner Automated SMS Text Dispatcher (Verizon Guy & T-Mobile Jacquise)
     const CLOUD_ALERT_TOPIC = 'sos_spotless_alerts_bus_v1';
     const CLOUD_BUS_POST_URL = 'https://ntfy.sh/' + CLOUD_ALERT_TOPIC;
     
-    // Verified Dual Owner Mobile Numbers
-    const OWNER_GUY_PHONE = '4255286820';       // (425) 528-6820 (Guy)
-    const OWNER_JACQUISE_PHONE = '2065780727';  // (206) 578-0727 (Jacquise / Co-Owner)
+    // Verified Dual Owner Mobile Numbers & Exact Telecom Carrier Gateways
+    const OWNER_GUY_PHONE = '4255286820';       // (425) 528-6820 (Guy - Verizon)
+    const OWNER_JACQUISE_PHONE = '2065780727';  // (206) 578-0727 (Jacquise - T-Mobile)
 
     async function dispatchAutomatedOwnerSMS(alertObj) {
       try {
-        const punchWord = alertObj.punchType === 'CLOCK_IN' ? 'CLOCK IN' 
-          : alertObj.punchType === 'CLOCK_OUT' ? 'CLOCK OUT' 
-          : alertObj.punchType === 'LOGIN' ? 'SIGN IN / LOGIN'
-          : 'GEOFENCE ALERT';
-        
+        const punchWord = alertObj.punchType === 'CLOCK_IN' ? 'CLOCK IN' : 'CLOCK OUT';
         const smsContent = `🚨 SOS GEOFENCE VIOLATION!
 Cleaner: ${alertObj.employeeName}
 Action: ${punchWord}
 Off-Site: ${alertObj.distanceMiles || '0.0'} miles away
-Assigned Site: ${alertObj.worksiteName || 'Piedmont Medical Building'}
-Time: ${alertObj.timeStr || new Date().toLocaleTimeString()}
-GPS: ${alertObj.currentAddress || 'GPS on file'}
-Open Payroll: https://chickeringguycell-dotcom.github.io/sos-payroll-app/`;
+Assigned Site: ${alertObj.worksiteName || 'Worksite'}
+Time: ${alertObj.timeStr}
+GPS: ${alertObj.currentAddress}
+Open Payroll: https://chickeringguycell-dotcom.github.io/sos-payroll-app/?v=98`;
 
-        // 1. Dispatch to Cloud Bus with Urgent SMS priority tags
+        // 1. Direct Urgent Cloud Bus (Instant Lock Screen Push + Sound & Vibration)
         fetch(CLOUD_BUS_POST_URL, {
           method: 'POST',
           headers: {
             'Title': `🚨 OFF-SITE ${punchWord}: ${alertObj.employeeName}`,
             'Priority': 'urgent',
             'Tags': 'rotating_light,warning,phone,sos',
-            'Click': 'https://chickeringguycell-dotcom.github.io/sos-payroll-app/'
+            'Actions': 'view, Open Payroll, https://chickeringguycell-dotcom.github.io/sos-payroll-app/?v=98'
           },
-          body: smsContent
+          body: JSON.stringify(alertObj)
         }).catch(() => {});
 
-        // 2. Dispatch via TextBelt REST SMS
-        [OWNER_GUY_PHONE, OWNER_JACQUISE_PHONE].forEach(phoneNum => {
-          fetch('https://textbelt.com/text', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              phone: phoneNum,
-              message: smsContent,
-              key: 'textbelt'
-            })
-          }).catch(() => {});
-        });
-
-        // 3. Dispatch via Multi-Carrier Email-to-SMS Gateways & Webhooks
-        const carrierGateways = [
-          OWNER_GUY_PHONE + '@vtext.com',      // Verizon Guy
-          OWNER_GUY_PHONE + '@tmomail.net',    // T-Mobile Guy
-          OWNER_GUY_PHONE + '@txt.att.net',    // AT&T Guy
-          OWNER_JACQUISE_PHONE + '@vtext.com',  // Verizon Jacquise
-          OWNER_JACQUISE_PHONE + '@tmomail.net',// T-Mobile Jacquise
-          OWNER_JACQUISE_PHONE + '@txt.att.net',// AT&T Jacquise
-          'sos.cleaning@outlook.com'
+        // 2. Direct Carrier SMS Dispatch (Verizon Guy & T-Mobile Jacquise)
+        const targetGateways = [
+          '4255286820@vtext.com',       // Verizon SMS Guy
+          '4255286820@vzwpix.com',      // Verizon MMS Guy
+          '2065780727@tmomail.net',     // T-Mobile Jacquise
+          'sos.cleaning@outlook.com'     // Official Company Email
         ];
 
-        carrierGateways.forEach(targetAddress => {
-          fetch('https://formspree.io/f/mqazkzyy', {
+        targetGateways.forEach(targetAddress => {
+          fetch('https://formsubmit.co/ajax/' + targetAddress, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
             body: JSON.stringify({
-              to: targetAddress,
-              subject: '🚨 SOS Geofence Violation: ' + alertObj.employeeName + ' (' + punchWord + ')',
-              message: smsContent
+              _subject: `🚨 SOS Geofence Violation: ${alertObj.employeeName} (${punchWord})`,
+              message: smsContent,
+              _template: 'box'
             })
           }).catch(() => {});
         });
-
-        // 4. Show On-Screen Instant SMS Dispatch Overlay with 1-Tap Text Buttons
-        showInstantSmsModal(alertObj, smsContent);
 
       } catch (err) {
         console.warn('[SMS Dispatcher] Error:', err);
       }
-    }
-
-    function showInstantSmsModal(alertObj, smsContent) {
-      let modal = document.getElementById('sos-instant-sms-modal');
-      if (!modal) {
-        modal = document.createElement('div');
-        modal.id = 'sos-instant-sms-modal';
-        modal.style.cssText = 'position:fixed; top:20px; left:50%; transform:translateX(-50%); max-width:440px; width:92%; background:linear-gradient(145deg, #1E1B18 0%, #0F0E0C 100%); border:2px solid #EF4444; border-radius:16px; padding:18px; color:#FFF; box-shadow:0 20px 50px rgba(0,0,0,0.9); z-index:999999; font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif; animation:slideDown 0.3s ease;';
-        document.body.appendChild(modal);
-      }
-
-      const encodedBody = encodeURIComponent(smsContent);
-      const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent);
-      const sep = isIOSDevice ? '&' : '?';
-
-      modal.innerHTML = `
-        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
-          <div style="display:flex; align-items:center; gap:8px;">
-            <span style="font-size:20px;">🚨</span>
-            <div>
-              <div style="font-weight:900; font-size:14px; color:#EF4444; text-transform:uppercase; letter-spacing:0.5px;">Off-Site Geofence Violation</div>
-              <div style="font-size:12px; color:#94A3B8;">${alertObj.employeeName} • ${alertObj.distanceMiles || '0.0'} mi away</div>
-            </div>
-          </div>
-          <button onclick="document.getElementById('sos-instant-sms-modal').remove()" style="background:rgba(255,255,255,0.1); border:none; color:#FFF; width:26px; height:26px; border-radius:50%; font-size:14px; cursor:pointer;">✕</button>
-        </div>
-
-        <div style="font-size:12px; color:#CBD5E1; margin-bottom:14px; background:rgba(0,0,0,0.4); padding:10px; border-radius:8px; border:1px solid rgba(255,255,255,0.08);">
-          Automated text dispatches queued to Guy Chickering & Jacquise Arrington. Tap below to send directly via your phone's Messages app:
-        </div>
-
-        <div style="display:flex; flex-direction:column; gap:8px;">
-          <a href="sms:+14255286820${sep}body=${encodedBody}" target="_blank" style="display:flex; align-items:center; justify-content:center; gap:8px; background:linear-gradient(135deg, #0284C7 0%, #0369A1 100%); color:#FFF; text-decoration:none; font-weight:800; font-size:13px; padding:10px; border-radius:10px; box-shadow:0 4px 12px rgba(2,132,199,0.4);">
-            📱 Text Guy: (425) 528-6820
-          </a>
-          <a href="sms:+12065780727${sep}body=${encodedBody}" target="_blank" style="display:flex; align-items:center; justify-content:center; gap:8px; background:linear-gradient(135deg, #D4AF37 0%, #AA820A 100%); color:#000; text-decoration:none; font-weight:900; font-size:13px; padding:10px; border-radius:10px; box-shadow:0 4px 12px rgba(212,175,55,0.4);">
-            📱 Text Jacquise: (206) 578-0727
-          </a>
-        </div>
-      `;
-      modal.style.display = 'block';
     }
 
     function broadcastToCloudBus(alertObj) {
