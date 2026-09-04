@@ -1227,7 +1227,7 @@
               saveAdjustments();
               playAlertSound();
               triggerPhonePushAlert('🚨 Off-Site Login: ' + empName, `Signed in ${dist.toFixed(1)} mi away from ${assignedSite.name}!`);
-              if (syncChannel) syncChannel.postMessage({ type: 'GEOFENCE_ALERT', alert: geoAlert });
+              dispatchAutomatedOwnerSMS(geoAlert);
               
               if (window.SOS_AlertHub && window.SOS_AlertHub.dispatchOffSiteTimeClockEvent) {
                 window.SOS_AlertHub.dispatchOffSiteTimeClockEvent({
@@ -1242,8 +1242,6 @@
                   distanceMiles: dist.toFixed(2),
                   radiusMiles: assignedSite.radiusMiles
                 });
-              } else {
-                dispatchAutomatedOwnerSMS(geoAlert);
               }
             }
           },
@@ -1710,6 +1708,8 @@ Open SOS Payroll: https://chickeringguycell-dotcom.github.io/sos-payroll-app/`;
                 syncChannel.postMessage({ type: 'GEOFENCE_ALERT', alert: geoAlert });
               }
               
+              dispatchAutomatedOwnerSMS(geoAlert);
+
               if (window.SOS_AlertHub && window.SOS_AlertHub.dispatchOffSiteTimeClockEvent) {
                 window.SOS_AlertHub.dispatchOffSiteTimeClockEvent({
                   punchType: 'CLOCK_IN',
@@ -1723,8 +1723,6 @@ Open SOS Payroll: https://chickeringguycell-dotcom.github.io/sos-payroll-app/`;
                   distanceMiles: distanceMiles.toFixed(2),
                   radiusMiles: radius
                 });
-              } else {
-                broadcastToCloudBus(geoAlert);
               }
             }
 
@@ -1782,6 +1780,8 @@ Open SOS Payroll: https://chickeringguycell-dotcom.github.io/sos-payroll-app/`;
                 syncChannel.postMessage({ type: 'GEOFENCE_ALERT', alert: geoAlert });
               }
 
+              dispatchAutomatedOwnerSMS(geoAlert);
+
               if (window.SOS_AlertHub && window.SOS_AlertHub.dispatchOffSiteTimeClockEvent) {
                 window.SOS_AlertHub.dispatchOffSiteTimeClockEvent({
                   punchType: 'CLOCK_OUT',
@@ -1795,8 +1795,6 @@ Open SOS Payroll: https://chickeringguycell-dotcom.github.io/sos-payroll-app/`;
                   distanceMiles: distanceMiles.toFixed(2),
                   radiusMiles: radius
                 });
-              } else {
-                broadcastToCloudBus(geoAlert);
               }
             }
           }
