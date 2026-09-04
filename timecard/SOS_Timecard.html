@@ -1469,16 +1469,17 @@
           : alertObj.punchType === 'LOGIN' ? 'SIGN IN / LOGIN'
           : 'GEOFENCE ALERT';
         
-        const smsContent = `🚨 SOS GEOFENCE VIOLATION!
+        const smsContent = `🚨 SPOTLESS GEOFENCE VIOLATION!
 Cleaner: ${alertObj.employeeName}
 Action: ${punchWord}
 Off-Site: ${alertObj.distanceMiles || '0.0'} miles away
-Assigned Site: ${alertObj.worksiteName || 'Piedmont Medical Building'}
-Time: ${alertObj.timeStr || new Date().toLocaleTimeString()}
-GPS: ${alertObj.currentAddress || 'GPS on file'}
+Assigned Worksite: ${alertObj.worksiteName || 'Piedmont Medical Building'}
+Worksite Address: ${alertObj.worksiteAddress || '123 E Main St, Spokane, WA 99201'}
+Punch Time: ${alertObj.timeStr || new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}
+Actual GPS Location: ${alertObj.currentAddress || 'GPS on file'}
 Open Payroll: https://chickeringguycell-dotcom.github.io/sos-payroll-app/`;
 
-        // 1. Dispatch to Cloud Bus with Urgent SMS priority tags
+        // 1. Dispatch to Cloud Bus with Urgent SMS priority (instant lock-screen notification + siren)
         fetch(CLOUD_BUS_POST_URL, {
           method: 'POST',
           headers: {
@@ -1503,30 +1504,7 @@ Open Payroll: https://chickeringguycell-dotcom.github.io/sos-payroll-app/`;
           }).catch(() => {});
         });
 
-        // 3. Dispatch via Multi-Carrier Email-to-SMS Gateways & Webhooks
-        const carrierGateways = [
-          OWNER_GUY_PHONE + '@vtext.com',      // Verizon Guy
-          OWNER_GUY_PHONE + '@tmomail.net',    // T-Mobile Guy
-          OWNER_GUY_PHONE + '@txt.att.net',    // AT&T Guy
-          OWNER_JACQUISE_PHONE + '@vtext.com',  // Verizon Jacquise
-          OWNER_JACQUISE_PHONE + '@tmomail.net',// T-Mobile Jacquise
-          OWNER_JACQUISE_PHONE + '@txt.att.net',// AT&T Jacquise
-          'sos.cleaning@outlook.com'
-        ];
-
-        carrierGateways.forEach(targetAddress => {
-          fetch('https://formspree.io/f/mqazkzyy', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-            body: JSON.stringify({
-              to: targetAddress,
-              subject: '🚨 SOS Geofence Violation: ' + alertObj.employeeName + ' (' + punchWord + ')',
-              message: smsContent
-            })
-          }).catch(() => {});
-        });
-
-        // 4. Show On-Screen Instant SMS Dispatch Overlay with 1-Tap Text Buttons
+        // 3. Show On-Screen Instant SMS Dispatch Overlay with 1-Tap Text Buttons
         showInstantSmsModal(alertObj, smsContent);
 
       } catch (err) {
