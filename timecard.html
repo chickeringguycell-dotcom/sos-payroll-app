@@ -1095,6 +1095,15 @@
     }
 
     function saveCroppedPhoto() {
+      const activeName = getActiveName();
+      if (activeName && window.cropCanvas) {
+        try {
+          const base64 = cropCanvas.toDataURL('image/png', 0.85);
+          if (window.SOS_CloudSyncBridge && window.SOS_CloudSyncBridge.syncEmployeePhotoToCloud) {
+            window.SOS_CloudSyncBridge.syncEmployeePhotoToCloud(activeName, base64);
+          }
+        } catch(e) {}
+      }
       const canvas = document.getElementById('cropCanvas');
       const empName = getActiveName();
       if (!canvas || !empName) return;
@@ -1998,5 +2007,6 @@ Open Payroll: https://chickeringguycell-dotcom.github.io/sos-payroll-app/?v=98`;
   </script>
   <script src="sos_pwa_push.js"></script>
   <script src="sos_alert_hub.js"></script>
+  <script src="sos_cloud_sync_bridge.js"></script>
 </body>
 </html>
