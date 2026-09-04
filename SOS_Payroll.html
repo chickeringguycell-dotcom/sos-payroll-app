@@ -1101,9 +1101,13 @@
       return getInitialState();
     }
 
-    function saveState() {
+        function saveState() {
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(AppData));
+        if (syncChannel) syncChannel.postMessage({ type: 'REFRESH_PAYROLL' });
+        if (window.SOS_CloudDatabase && window.SOS_CloudDatabase.pushStateToCloudDatabase) {
+          window.SOS_CloudDatabase.pushStateToCloudDatabase('PAYROLL_STATE_CHANGE');
+        }
       } catch (e) {}
     }
 
@@ -3973,6 +3977,7 @@ Status: Completed / Paid
   </script>
 
   <script src="sos_pwa_push.js"></script>
+  <script src="sos_cloud_database_engine.js"></script>
   <script src="sos_alert_hub.js"></script>
   <script src="sos_cloud_sync_bridge.js"></script>
 </body>
