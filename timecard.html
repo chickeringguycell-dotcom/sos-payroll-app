@@ -503,18 +503,21 @@
           <!-- LEFT SIDE: Name & Worksite on Top, Square Photo Frame on Bottom Left -->
           <div style="display:flex; flex-direction:column; align-items:flex-start; justify-content:space-between; gap:10px; min-width:0; flex-shrink:1;">
             
-            <!-- Top Left: Employee Name & Worksite Badge -->
+            <!-- Top Left: Employee Name, Worksite Badge & Sign-in Time -->
             <div>
               <div style="font-size:10px; color:var(--text-muted); font-weight:700; text-transform:uppercase;">👤 Employee Profile</div>
               <div id="loggedInEmpName" style="font-size:18px; font-weight:900; color:#FFF; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Guy Chickering</div>
-              <div id="displayWorksiteContainer" style="margin-top:3px;">
-                <span id="displayWorksiteBadge" style="font-size:10px; font-weight:700; color:var(--gold); background:rgba(212,175,55,0.15); padding:2px 6px; border-radius:6px; border:1px solid var(--gold); display:none; white-space:nowrap;">
+              <div id="displayWorksiteContainer" style="margin-top:3px; display:flex; flex-direction:column; gap:2px;">
+                <span id="displayWorksiteBadge" style="font-size:10px; font-weight:700; color:var(--gold); background:rgba(212,175,55,0.15); padding:2px 6px; border-radius:6px; border:1px solid var(--gold); display:none; white-space:nowrap; width:fit-content;">
                   🏢 Worksite
                 </span>
+                <div id="displaySignInStamp" style="font-size:10px; font-weight:700; color:#94A3B8; margin-top:2px;">
+                  🔑 Signed in: <span id="signInTimeLabel" style="color:var(--gold-light); font-weight:800;">--</span>
+                </div>
               </div>
             </div>
 
-                        <!-- Bottom Left: Interactive Touch-Draggable Square Photo Frame -->
+            <!-- Bottom Left: Interactive Touch-Draggable Square Photo Frame -->
             <div style="position:relative;">
               <div id="empAvatarContainer" style="width:78px; height:78px; min-width:78px; border-radius:12px; border:2.5px solid var(--gold); box-shadow:0 0 16px rgba(212,175,55,0.45); overflow:hidden; background:linear-gradient(135deg, #1C222E 0%, #10141C 100%); display:flex; align-items:center; justify-content:center; cursor:grab; touch-action:none; user-select:none; position:relative;" title="Put your finger on photo to drag & center, lift off to save!">
                 <span id="empAvatarInitials" style="font-size:26px; font-weight:900; color:var(--gold-light);">GC</span>
@@ -559,13 +562,15 @@
     </div>
 
     <!-- Box 4: Live Real-Time Clock Station -->
-    <div class="uniform-box uniform-box-gold clock-station-box">
-      <div class="live-time" id="clockTime">--:--:-- --</div>
-      <div class="live-date" id="clockDate">Loading date...</div>
-      <div class="live-badge">
-        <div class="live-dot"></div>
-        <span>Live Real-Time Clock</span>
+    <div class="uniform-box uniform-box-gold clock-station-box" style="padding:14px 18px; position:relative; background:radial-gradient(circle, #1A1F2C 0%, #11141C 100%);">
+      <div style="display:flex; justify-content:space-between; align-items:center; width:100%; margin-bottom:2px;">
+        <div class="live-date-corner" id="clockDate" style="font-size:12px; font-weight:800; color:var(--gold-light); text-transform:uppercase; letter-spacing:0.8px;">--</div>
+        <div class="live-badge" style="margin-top:0; padding:2px 10px; font-size:10px; border-radius:12px;">
+          <div class="live-dot"></div>
+          <span>Live Station Clock</span>
+        </div>
       </div>
+      <div class="live-time" id="clockTime" style="font-size:42px; font-weight:900; color:#FFFFFF; letter-spacing:2px; line-height:1.1; margin:6px 0 2px 0; text-align:center; text-shadow:0 0 20px rgba(212,175,55,0.45); font-variant-numeric:tabular-nums;">--:--:-- --</div>
     </div>
 
     <!-- Box 5: Unified Master Action Card & Button (Green Clock In <-> Red Clock Out) -->
@@ -1095,15 +1100,6 @@
     }
 
     function saveCroppedPhoto() {
-      const activeName = getActiveName();
-      if (activeName && window.cropCanvas) {
-        try {
-          const base64 = cropCanvas.toDataURL('image/png', 0.85);
-          if (window.SOS_CloudSyncBridge && window.SOS_CloudSyncBridge.syncEmployeePhotoToCloud) {
-            window.SOS_CloudSyncBridge.syncEmployeePhotoToCloud(activeName, base64);
-          }
-        } catch(e) {}
-      }
       const canvas = document.getElementById('cropCanvas');
       const empName = getActiveName();
       if (!canvas || !empName) return;
@@ -1150,15 +1146,16 @@
       reader.readAsDataURL(file);
     }
 
-        function getActiveName() {
+    function getActiveName() {
+      const input = document.getElementById('employeeNameInput');
+      return (input && input.value.trim()) ? input.value.trim() : (currentSession ? currentSession.name : 'Guy Chickering');
+    }
+
+    function getActiveName() {
       try {
-        const stored = localStorage.getItem('sos_timecard_active_emp');
-        if (stored && stored.trim()) return stored.trim();
-        const input = document.getElementById('loginNameInput') || document.getElementById('employeeNameInput');
-        if (input && input.value && input.value.trim()) return input.value.trim();
-        return 'Guy Chickering';
+        return localStorage.getItem('sos_timecard_active_emp') || '';
       } catch(e) {
-        return 'Guy Chickering';
+        return '';
       }
     }
 
@@ -1182,65 +1179,396 @@
       checkAndDispatchLoginGeofence(name);
     }
 
-        function checkAndDispatchLoginGeofence(empName) {
-      const assignedSite = getEmployeeWorksite(empName);
-      let capturedLat = 47.6101;
-      let capturedLng = -122.2015;
-
-      function evaluateAndDispatch(lat, lng) {
-        const dist = calculateDistanceMiles(lat, lng, assignedSite.lat, assignedSite.lng);
-        if (dist > (assignedSite.radiusMiles || 0.095)) {
-          const geoAlert = {
-            id: 'geo-login-' + Date.now(),
-            type: 'GEOFENCE',
-            punchType: 'LOGIN',
-            employeeName: empName,
-            timeStr: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }),
-            distanceMiles: dist.toFixed(1),
-            currentAddress: `GPS: ${lat.toFixed(4)}, ${lng.toFixed(4)}`,
-            worksiteName: assignedSite.name,
-            worksiteAddress: assignedSite.address,
-            status: 'UNREAD',
-            timestamp: Date.now()
-          };
-
-          adjustments.unshift(geoAlert);
-          saveAdjustments();
-
-          // 1. Local Phone Push & Sound
-          triggerPhonePushAlert('🚨 Off-Site Sign-In: ' + empName, `Logged into timecard ${dist.toFixed(1)} mi away from ${assignedSite.name}!`);
-
-          // 2. Broadcast to SOS Payroll Header Bell across cloud
-          if (syncChannel) syncChannel.postMessage({ type: 'GEOFENCE_ALERT', alert: geoAlert });
-
-          // 3. Dispatch to Cloud Database
-          if (window.SOS_CloudDatabase && window.SOS_CloudDatabase.pushStateToCloudDatabase) {
-            window.SOS_CloudDatabase.pushStateToCloudDatabase('OFFSITE_LOGIN_BREACH');
-          }
-
-          // 4. Dispatch SMS Text to Guy (425-528-6820) & Jacquise (206-578-0727)
-          broadcastToCloudBus(geoAlert);
-        }
-      }
+    function checkAndDispatchLoginGeofence(empName) {
+      const rawAssignedSite = getEmployeeWorksite(empName);
+      const assignedSite = {
+        id: (rawAssignedSite && rawAssignedSite.id) ? rawAssignedSite.id : 'site-1',
+        name: (rawAssignedSite && rawAssignedSite.name) ? rawAssignedSite.name : 'Piedmont Medical Building',
+        address: (rawAssignedSite && rawAssignedSite.address) ? rawAssignedSite.address : '123 E Main St, Spokane, WA 99201',
+        lat: (rawAssignedSite && rawAssignedSite.lat) ? Number(rawAssignedSite.lat) : 47.6588,
+        lng: (rawAssignedSite && rawAssignedSite.lng) ? Number(rawAssignedSite.lng) : -117.4260,
+        radiusMiles: (rawAssignedSite && rawAssignedSite.radiusMiles) ? Number(rawAssignedSite.radiusMiles) : 0.095
+      };
 
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
           (pos) => {
-            if (pos && pos.coords) {
-              capturedLat = pos.coords.latitude;
-              capturedLng = pos.coords.longitude;
+            const lat = pos.coords.latitude;
+            const lng = pos.coords.longitude;
+            const dist = calculateDistanceMiles(lat, lng, assignedSite.lat, assignedSite.lng);
+            if (dist > assignedSite.radiusMiles) {
+              const geoAlert = {
+                id: 'geo-login-' + Date.now(),
+                type: 'GEOFENCE',
+                punchType: 'LOGIN',
+                employeeName: empName,
+                timeStr: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }),
+                distanceMiles: dist.toFixed(1),
+                currentAddress: `GPS: ${lat.toFixed(4)}, ${lng.toFixed(4)}`,
+                worksiteName: assignedSite.name,
+                worksiteAddress: assignedSite.address,
+                status: 'UNREAD',
+                timestamp: Date.now()
+              };
+
+              adjustments.unshift(geoAlert);
+              saveAdjustments();
+              playAlertSound();
+              triggerPhonePushAlert('🚨 Off-Site Login: ' + empName, `Signed in ${dist.toFixed(1)} mi away from ${assignedSite.name}!`);
+              if (syncChannel) syncChannel.postMessage({ type: 'GEOFENCE_ALERT', alert: geoAlert });
+              
+              if (window.SOS_AlertHub && window.SOS_AlertHub.dispatchOffSiteTimeClockEvent) {
+                window.SOS_AlertHub.dispatchOffSiteTimeClockEvent({
+                  punchType: 'LOGIN',
+                  employeeName: empName,
+                  worksiteName: assignedSite.name,
+                  worksiteAddress: assignedSite.address,
+                  worksiteLat: assignedSite.lat,
+                  worksiteLng: assignedSite.lng,
+                  punchLat: lat,
+                  punchLng: lng,
+                  distanceMiles: dist.toFixed(2),
+                  radiusMiles: assignedSite.radiusMiles
+                });
+              } else {
+                dispatchAutomatedOwnerSMS(geoAlert);
+              }
             }
-            evaluateAndDispatch(capturedLat, capturedLng);
           },
           (err) => {
-            evaluateAndDispatch(capturedLat, capturedLng);
+            console.warn('[GPS] Position note on login:', err.message);
           },
-          { enableHighAccuracy: true, timeout: 2000, maximumAge: 0 }
+          { enableHighAccuracy: true, timeout: 4000, maximumAge: 0 }
         );
-      } else {
-        evaluateAndDispatch(capturedLat, capturedLng);
       }
     }
+
+    function handleTimecardLogout() {
+      try {
+        localStorage.removeItem('sos_timecard_active_emp');
+        localStorage.removeItem('sos_timecard_active_dob');
+      } catch(e) {}
+
+      const nameInput = document.getElementById('loginNameInput');
+      const dobInput = document.getElementById('loginDobInput');
+      if (nameInput) nameInput.value = '';
+      if (dobInput) dobInput.value = '';
+
+      renderView();
+    }
+
+    function handleNameChange() {
+      const name = getActiveName();
+      saveSession({ name: name, loggedInAt: Date.now() });
+      renderView();
+    }
+
+    function updateClock() {
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+      const dateStr = now.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' });
+      
+      const elTime = document.getElementById('clockTime');
+      const elDate = document.getElementById('clockDate');
+      if (elTime) elTime.innerText = timeStr;
+      if (elDate) elDate.innerText = dateStr;
+
+      const empName = getActiveName();
+      const activePunch = getActivePunch(empName);
+      if (activePunch) {
+        const diffMs = Math.max(0, now.getTime() - activePunch.clockInTime);
+        const hrs = Math.floor(diffMs / 3600000);
+        const mins = Math.floor((diffMs % 3600000) / 60000);
+        const secs = Math.floor((diffMs % 60000) / 1000);
+        
+        const timerEl = document.getElementById('activeShiftTimer');
+        if (timerEl) {
+          timerEl.innerText = String(hrs).padStart(2, '0') + 'h : ' + String(mins).padStart(2, '0') + 'm : ' + String(secs).padStart(2, '0') + 's';
+        }
+      }
+    }
+
+    function loadPunchState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_PUNCHES_KEY);
+        return raw ? JSON.parse(raw) : { activePunches: {}, history: [] };
+      } catch (e) {
+        return { activePunches: {}, history: [] };
+      }
+    }
+
+    function savePunchState() {
+      try {
+        localStorage.setItem(STORAGE_PUNCHES_KEY, JSON.stringify(punchState));
+        if (syncChannel) syncChannel.postMessage({ type: 'REFRESH_TIMECARD' });
+      } catch (e) {}
+    }
+
+    function loadAdjustments() {
+      try {
+        const raw = localStorage.getItem(STORAGE_ADJUSTMENTS_KEY);
+        return raw ? JSON.parse(raw) : [];
+      } catch (e) {
+        return [];
+      }
+    }
+
+    function saveAdjustments() {
+      try {
+        localStorage.setItem(STORAGE_ADJUSTMENTS_KEY, JSON.stringify(adjustments));
+        if (syncChannel) syncChannel.postMessage({ type: 'REFRESH_TIMECARD' });
+      } catch (e) {}
+    }
+
+    function getActivePunch(empName) {
+      if (!punchState || !punchState.activePunches) return null;
+      for (let k in punchState.activePunches) {
+        if (k.toLowerCase() === (empName || '').toLowerCase()) {
+          return punchState.activePunches[k];
+        }
+      }
+      return null;
+    }
+
+    function calculateDistanceMiles(lat1, lon1, lat2, lon2) {
+      const R = 3958.8;
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+      const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLon/2) * Math.sin(dLon/2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      return R * c;
+    }
+
+        function getEmployeeWorksite(empName) {
+      if (!empName) return null;
+
+      try {
+        const raw = localStorage.getItem(STORAGE_PAYROLL_KEY);
+        if (!raw) return null;
+        const pData = JSON.parse(raw);
+        if (!pData || !pData.team) return null;
+
+        const member = pData.team.find(m => m.name.toLowerCase() === empName.toLowerCase());
+        if (member && member.worksiteId && pData.worksites) {
+          const site = pData.worksites.find(s => s.id === member.worksiteId);
+          if (site) return site;
+        }
+        if (member && member.worksiteName && pData.worksites) {
+          const site = pData.worksites.find(s => s.name.toLowerCase() === member.worksiteName.toLowerCase());
+          if (site) return site;
+        }
+      } catch (e) {}
+
+      // Hardcoded fallback only for Guy Chickering (Spokane Facility)
+      if (empName.toLowerCase() === 'guy chickering') {
+        return {
+          id: 'site-1',
+          name: 'Piedmont Medical Building',
+          address: '123 E Main St, Spokane, WA 99201',
+          lat: 47.6588,
+          lng: -117.4260,
+          radiusMiles: 0.095
+        };
+      }
+
+      return null;
+    }
+
+        // Smooth Luxury Acoustic Chime (Replaces harsh sawtooth beep)
+    let tcAudioCtx = null;
+    function getTcAudioContext() {
+      try {
+        if (!tcAudioCtx) {
+          const AudioCtx = window.AudioContext || window.webkitAudioContext;
+          if (AudioCtx) tcAudioCtx = new AudioCtx();
+        }
+        if (tcAudioCtx && tcAudioCtx.state === 'suspended') {
+          tcAudioCtx.resume();
+        }
+        return tcAudioCtx;
+      } catch(e) {
+        return null;
+      }
+    }
+
+    function playPunchChime(isClockIn = true) {
+      try {
+        const ctx = getTcAudioContext();
+        if (!ctx) return;
+
+        const now = ctx.currentTime;
+        
+        // Gentle Dual Harmonic Sine Chime (Apple Pay / Luxury feel)
+        const notes = isClockIn ? [523.25, 659.25, 1046.50] : [659.25, 523.25];
+        notes.forEach((freq, idx) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, now + (idx * 0.09));
+
+          gain.gain.setValueAtTime(0.001, now + (idx * 0.09));
+          gain.gain.exponentialRampToValueAtTime(0.16, now + (idx * 0.09) + 0.03);
+          gain.gain.exponentialRampToValueAtTime(0.0001, now + (idx * 0.09) + 0.32);
+
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+
+          osc.start(now + (idx * 0.09));
+          osc.stop(now + (idx * 0.09) + 0.35);
+        });
+      } catch (e) {}
+    }
+
+    function playAlertSound() {
+      playPunchChime(false);
+    }
+
+    function triggerPhonePushAlert(title, message) {
+      if ('Notification' in window) {
+        if (Notification.permission === 'granted') {
+          new Notification(title, { body: message, icon: 'sos_timecard_logo.png' });
+        } else if (Notification.permission !== 'denied') {
+          Notification.requestPermission().then(permission => {
+            if (permission === 'granted') {
+              new Notification(title, { body: message, icon: 'sos_timecard_logo.png' });
+            }
+          });
+        }
+      }
+    }
+
+                // Dual-Owner Automated SMS Text Dispatcher & Cloud Alert Relay
+    const CLOUD_ALERT_TOPIC = 'sos_spotless_alerts_bus_v1';
+    const CLOUD_BUS_POST_URL = 'https://ntfy.sh/' + CLOUD_ALERT_TOPIC;
+    
+    // Verified Dual Owner Mobile Numbers
+    const OWNER_GUY_PHONE = '4255286820';       // (425) 528-6820 (Guy)
+    const OWNER_JACQUISE_PHONE = '2065780727';  // (206) 578-0727 (Jacquise / Co-Owner)
+
+    async function dispatchAutomatedOwnerSMS(alertObj) {
+      try {
+        const punchWord = alertObj.punchType === 'CLOCK_IN' ? 'CLOCK IN' 
+          : alertObj.punchType === 'CLOCK_OUT' ? 'CLOCK OUT' 
+          : alertObj.punchType === 'LOGIN' ? 'SIGN IN / LOGIN'
+          : 'GEOFENCE ALERT';
+        
+        const smsContent = `🚨 SOS GEOFENCE VIOLATION!
+Cleaner: ${alertObj.employeeName}
+Action: ${punchWord}
+Off-Site: ${alertObj.distanceMiles || '0.0'} miles away
+Assigned Site: ${alertObj.worksiteName || 'Piedmont Medical Building'}
+Time: ${alertObj.timeStr || new Date().toLocaleTimeString()}
+GPS: ${alertObj.currentAddress || 'GPS on file'}
+Open Payroll: https://chickeringguycell-dotcom.github.io/sos-payroll-app/`;
+
+        // 1. Dispatch to Cloud Bus with Urgent SMS priority tags
+        fetch(CLOUD_BUS_POST_URL, {
+          method: 'POST',
+          headers: {
+            'Title': `🚨 OFF-SITE ${punchWord}: ${alertObj.employeeName}`,
+            'Priority': 'urgent',
+            'Tags': 'rotating_light,warning,phone,sos',
+            'Click': 'https://chickeringguycell-dotcom.github.io/sos-payroll-app/'
+          },
+          body: smsContent
+        }).catch(() => {});
+
+        // 2. Dispatch via TextBelt REST SMS
+        [OWNER_GUY_PHONE, OWNER_JACQUISE_PHONE].forEach(phoneNum => {
+          fetch('https://textbelt.com/text', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              phone: phoneNum,
+              message: smsContent,
+              key: 'textbelt'
+            })
+          }).catch(() => {});
+        });
+
+        // 3. Dispatch via Multi-Carrier Email-to-SMS Gateways & Webhooks
+        const carrierGateways = [
+          OWNER_GUY_PHONE + '@vtext.com',      // Verizon Guy
+          OWNER_GUY_PHONE + '@tmomail.net',    // T-Mobile Guy
+          OWNER_GUY_PHONE + '@txt.att.net',    // AT&T Guy
+          OWNER_JACQUISE_PHONE + '@vtext.com',  // Verizon Jacquise
+          OWNER_JACQUISE_PHONE + '@tmomail.net',// T-Mobile Jacquise
+          OWNER_JACQUISE_PHONE + '@txt.att.net',// AT&T Jacquise
+          'sos.cleaning@outlook.com'
+        ];
+
+        carrierGateways.forEach(targetAddress => {
+          fetch('https://formspree.io/f/mqazkzyy', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+            body: JSON.stringify({
+              to: targetAddress,
+              subject: '🚨 SOS Geofence Violation: ' + alertObj.employeeName + ' (' + punchWord + ')',
+              message: smsContent
+            })
+          }).catch(() => {});
+        });
+
+        // 4. Show On-Screen Instant SMS Dispatch Overlay with 1-Tap Text Buttons
+        showInstantSmsModal(alertObj, smsContent);
+
+      } catch (err) {
+        console.warn('[SMS Dispatcher] Error:', err);
+      }
+    }
+
+    function showInstantSmsModal(alertObj, smsContent) {
+      let modal = document.getElementById('sos-instant-sms-modal');
+      if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'sos-instant-sms-modal';
+        modal.style.cssText = 'position:fixed; top:20px; left:50%; transform:translateX(-50%); max-width:440px; width:92%; background:linear-gradient(145deg, #1E1B18 0%, #0F0E0C 100%); border:2px solid #EF4444; border-radius:16px; padding:18px; color:#FFF; box-shadow:0 20px 50px rgba(0,0,0,0.9); z-index:999999; font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif; animation:slideDown 0.3s ease;';
+        document.body.appendChild(modal);
+      }
+
+      const encodedBody = encodeURIComponent(smsContent);
+      const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent);
+      const sep = isIOSDevice ? '&' : '?';
+
+      modal.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span style="font-size:20px;">🚨</span>
+            <div>
+              <div style="font-weight:900; font-size:14px; color:#EF4444; text-transform:uppercase; letter-spacing:0.5px;">Off-Site Geofence Violation</div>
+              <div style="font-size:12px; color:#94A3B8;">${alertObj.employeeName} • ${alertObj.distanceMiles || '0.0'} mi away</div>
+            </div>
+          </div>
+          <button onclick="document.getElementById('sos-instant-sms-modal').remove()" style="background:rgba(255,255,255,0.1); border:none; color:#FFF; width:26px; height:26px; border-radius:50%; font-size:14px; cursor:pointer;">✕</button>
+        </div>
+
+        <div style="font-size:12px; color:#CBD5E1; margin-bottom:14px; background:rgba(0,0,0,0.4); padding:10px; border-radius:8px; border:1px solid rgba(255,255,255,0.08);">
+          Automated text dispatches queued to Guy Chickering & Jacquise Arrington. Tap below to send directly via your phone's Messages app:
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          <a href="sms:+14255286820${sep}body=${encodedBody}" target="_blank" style="display:flex; align-items:center; justify-content:center; gap:8px; background:linear-gradient(135deg, #0284C7 0%, #0369A1 100%); color:#FFF; text-decoration:none; font-weight:800; font-size:13px; padding:10px; border-radius:10px; box-shadow:0 4px 12px rgba(2,132,199,0.4);">
+            📱 Text Guy: (425) 528-6820
+          </a>
+          <a href="sms:+12065780727${sep}body=${encodedBody}" target="_blank" style="display:flex; align-items:center; justify-content:center; gap:8px; background:linear-gradient(135deg, #D4AF37 0%, #AA820A 100%); color:#000; text-decoration:none; font-weight:900; font-size:13px; padding:10px; border-radius:10px; box-shadow:0 4px 12px rgba(212,175,55,0.4);">
+            📱 Text Jacquise: (206) 578-0727
+          </a>
+        </div>
+      `;
+      modal.style.display = 'block';
+    }
+
+    function broadcastToCloudBus(alertObj) {
+      dispatchAutomatedOwnerSMS(alertObj);
+    }
+
+    // ==========================================
+    // THE MASTER MORPHING BUTTON ACTION HANDLER
+    // ==========================================
+                        let isHistoryExpanded = false;
 
     function toggleHistoryExpand() {
       isHistoryExpanded = !isHistoryExpanded;
@@ -1249,16 +1577,21 @@
 
             let isPunchInProgress = false;
 
-        function handleMasterPunch() {
+    function handleMasterPunch() {
       if (isPunchInProgress) return;
       
       const empName = getActiveName();
+      if (!empName) {
+        alert('Please enter your name first.');
+        return;
+      }
+
       isPunchInProgress = true;
       const active = punchState.activePunches[empName];
       const now = new Date();
       const rawAssignedSite = getEmployeeWorksite(empName);
       
-      // Assigned Worksite Coordinates (Piedmont Medical Building, Spokane, WA)
+      // Guaranteed Safe Fallback Coordinates (Piedmont Medical Building, Spokane)
       const assignedSite = {
         name: (rawAssignedSite && rawAssignedSite.name) ? rawAssignedSite.name : 'Piedmont Medical Building',
         address: (rawAssignedSite && rawAssignedSite.address) ? rawAssignedSite.address : '123 E Main St, Spokane, WA 99201',
@@ -1271,9 +1604,9 @@
       const textEl = document.getElementById('masterPunchText');
       const iconEl = document.getElementById('masterPunchIcon');
 
-      // Play luxury crystal chime immediately on tap
-      try { playPunchChime(!active); } catch(e) {}
-
+      // -----------------------------------------------------------
+      // STEP 1: IMMEDIATELY DISPLAY '📡 Pinging your GPS location...'
+      // -----------------------------------------------------------
       if (btn) {
         btn.disabled = true;
         btn.style.opacity = '1.0';
@@ -1281,49 +1614,56 @@
         btn.style.boxShadow = '0 0 25px rgba(2,132,199,0.8)';
         btn.style.color = '#FFFFFF';
         btn.style.borderColor = '#38BDF8';
-        btn.style.transition = 'all 0.3s ease';
+        btn.style.transition = 'all 0.4s ease';
       }
       if (iconEl) iconEl.innerText = '📡';
       if (textEl) textEl.innerText = 'Pinging your GPS location...';
 
-      // Default initial coordinates to Western WA (~47.61, -122.20) so testing away from Spokane is 220 mi off-site
-      let capturedLat = 47.6101;
-      let capturedLng = -122.2015;
+      let capturedLat = 47.6588;
+      let capturedLng = -117.4260;
+      let hasRealGps = false;
 
+      // Start acquiring GPS in background immediately
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
           (pos) => {
             if (pos && pos.coords) {
               capturedLat = pos.coords.latitude;
               capturedLng = pos.coords.longitude;
+              hasRealGps = true;
             }
           },
-          (err) => {
-            console.warn('[GPS] Position note:', err.message);
-          },
-          { enableHighAccuracy: true, timeout: 2000, maximumAge: 0 }
+          (err) => {},
+          { enableHighAccuracy: true, timeout: 2500, maximumAge: 0 }
         );
       }
 
-      // Safety fail-safe timeout
+      // Safety fail-safe timeout: ensure isPunchInProgress is never stuck
       const safetyTimeout = setTimeout(() => {
         if (isPunchInProgress) {
           isPunchInProgress = false;
           if (btn) btn.disabled = false;
           renderView();
         }
-      }, 4000);
+      }, 5000);
 
+      // -----------------------------------------------------------
+      // STEP 2: EXACT 3-SECOND TIMER -> COMPLETE PUNCH & RESTORE BUTTON
+      // -----------------------------------------------------------
       setTimeout(() => {
         clearTimeout(safetyTimeout);
         try {
-          let distanceMiles = calculateDistanceMiles(capturedLat, capturedLng, assignedSite.lat, assignedSite.lng);
+          let distanceMiles = 0;
+          try {
+            distanceMiles = calculateDistanceMiles(capturedLat, capturedLng, assignedSite.lat, assignedSite.lng);
+          } catch(e) {
+            distanceMiles = 0;
+          }
           const radius = assignedSite.radiusMiles || 0.095; // 500 feet
           const isOff = distanceMiles > radius;
-          const punchTypeStr = !active ? 'CLOCK_IN' : 'CLOCK_OUT';
 
           if (!active) {
-            // CLOCK IN
+            // 🟢 FINALIZE CLOCK IN -> MORPHS TO RED CLOCK OUT
             punchState.activePunches[empName] = {
               employee: empName,
               clockInTime: now.getTime(),
@@ -1334,9 +1674,57 @@
                 ? `${distanceMiles.toFixed(1)} mi off-site (${capturedLat.toFixed(3)}, ${capturedLng.toFixed(3)})`
                 : `✓ On-Site (${assignedSite.name})`
             };
+
             savePunchState();
+
+            if (isOff) {
+              const geoAlert = {
+                id: 'geo-' + Date.now(),
+                type: 'GEOFENCE',
+                employeeName: empName,
+                punchType: 'CLOCK_IN',
+                timeStr: now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }),
+                distanceMiles: distanceMiles.toFixed(1),
+                currentAddress: `GPS: ${capturedLat.toFixed(4)}, ${capturedLng.toFixed(4)}`,
+                worksiteName: assignedSite.name,
+                worksiteAddress: assignedSite.address,
+                status: 'UNREAD',
+                timestamp: Date.now()
+              };
+
+              adjustments.unshift(geoAlert);
+              saveAdjustments();
+
+              playAlertSound();
+              triggerPhonePushAlert(
+                '🚨 Geofence Alert: ' + empName,
+                `Clocked in ${distanceMiles.toFixed(1)} miles away from ${assignedSite.name}!`
+              );
+
+              if (syncChannel) {
+                syncChannel.postMessage({ type: 'GEOFENCE_ALERT', alert: geoAlert });
+              }
+              
+              if (window.SOS_AlertHub && window.SOS_AlertHub.dispatchOffSiteTimeClockEvent) {
+                window.SOS_AlertHub.dispatchOffSiteTimeClockEvent({
+                  punchType: 'CLOCK_IN',
+                  employeeName: empName,
+                  worksiteName: assignedSite.name,
+                  worksiteAddress: assignedSite.address,
+                  worksiteLat: assignedSite.lat,
+                  worksiteLng: assignedSite.lng,
+                  punchLat: capturedLat,
+                  punchLng: capturedLng,
+                  distanceMiles: distanceMiles.toFixed(2),
+                  radiusMiles: radius
+                });
+              } else {
+                broadcastToCloudBus(geoAlert);
+              }
+            }
+
           } else {
-            // CLOCK OUT
+            // 🔴 FINALIZE CLOCK OUT -> MORPHS TO GREEN CLOCK IN
             const diffHours = Math.max(0.01, (now.getTime() - active.clockInTime) / 3600000);
             const roundedHours = Math.round(diffHours * 100) / 100;
 
@@ -1358,45 +1746,57 @@
             punchState.history.unshift(completedPunch);
             delete punchState.activePunches[empName];
             savePunchState();
+
             syncHoursToPayroll(empName, roundedHours);
-          }
 
-          // 🚨 DISPATCH OFF-SITE ALERT SIMULTANEOUSLY TO PAYROLL BELL & BOTH PHONES
-          if (isOff) {
-            const geoAlert = {
-              id: 'geo-' + Date.now(),
-              type: 'GEOFENCE',
-              employeeName: empName,
-              punchType: punchTypeStr,
-              timeStr: now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }),
-              distanceMiles: distanceMiles.toFixed(1),
-              currentAddress: `GPS: ${capturedLat.toFixed(4)}, ${capturedLng.toFixed(4)}`,
-              worksiteName: assignedSite.name,
-              worksiteAddress: assignedSite.address,
-              status: 'UNREAD',
-              timestamp: Date.now()
-            };
+            if (isOff) {
+              const geoAlert = {
+                id: 'geo-' + Date.now(),
+                type: 'GEOFENCE',
+                employeeName: empName,
+                punchType: 'CLOCK_OUT',
+                timeStr: now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }),
+                distanceMiles: distanceMiles.toFixed(1),
+                currentAddress: `GPS: ${capturedLat.toFixed(4)}, ${capturedLng.toFixed(4)}`,
+                worksiteName: assignedSite.name,
+                worksiteAddress: assignedSite.address,
+                status: 'UNREAD',
+                timestamp: Date.now()
+              };
 
-            // 1. Add to local alerts list & save
-            adjustments.unshift(geoAlert);
-            saveAdjustments();
+              adjustments.unshift(geoAlert);
+              saveAdjustments();
 
-            // 2. Broadcast to SOS Payroll Header Bell across cloud
-            if (syncChannel) {
-              syncChannel.postMessage({ type: 'GEOFENCE_ALERT', alert: geoAlert });
+              playAlertSound();
+              triggerPhonePushAlert(
+                '🚨 Geofence Alert: ' + empName,
+                `Clocked OUT ${distanceMiles.toFixed(1)} miles away from ${assignedSite.name}!`
+              );
+
+              if (syncChannel) {
+                syncChannel.postMessage({ type: 'GEOFENCE_ALERT', alert: geoAlert });
+              }
+
+              if (window.SOS_AlertHub && window.SOS_AlertHub.dispatchOffSiteTimeClockEvent) {
+                window.SOS_AlertHub.dispatchOffSiteTimeClockEvent({
+                  punchType: 'CLOCK_OUT',
+                  employeeName: empName,
+                  worksiteName: assignedSite.name,
+                  worksiteAddress: assignedSite.address,
+                  worksiteLat: assignedSite.lat,
+                  worksiteLng: assignedSite.lng,
+                  punchLat: capturedLat,
+                  punchLng: capturedLng,
+                  distanceMiles: distanceMiles.toFixed(2),
+                  radiusMiles: radius
+                });
+              } else {
+                broadcastToCloudBus(geoAlert);
+              }
             }
-
-            // 3. Dispatch to Cloud Database & Push Bus immediately
-            if (window.SOS_CloudDatabase && window.SOS_CloudDatabase.pushStateToCloudDatabase) {
-              window.SOS_CloudDatabase.pushStateToCloudDatabase('GEOFENCE_VIOLATION_' + punchTypeStr);
-            }
-
-            // 4. Dispatch SMS text & mobile lock-screen alerts to Guy (425-528-6820) & Jacquise (206-578-0727)
-            broadcastToCloudBus(geoAlert);
           }
-
         } catch(err) {
-          console.error('Punch finalization error:', err);
+          console.error('[Timecard Punch Error]', err);
         } finally {
           isPunchInProgress = false;
           if (btn) {
@@ -1408,7 +1808,7 @@
           }
           renderView();
         }
-      }, 2500);
+      }, 3000);
     }
 
     function syncHoursToPayroll(empName, addedHours) {
@@ -1484,7 +1884,17 @@
       if (panelLoggedIn) panelLoggedIn.style.display = 'block';
       if (nameDisp) nameDisp.innerText = empName;
 
-            // Avatar rendering
+      const signInLabel = document.getElementById('signInTimeLabel');
+      if (signInLabel) {
+        if (currentSession && currentSession.loggedInAt) {
+          const sDate = new Date(currentSession.loggedInAt);
+          signInLabel.innerText = sDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) + ' • ' + sDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+        } else {
+          signInLabel.innerText = 'Active Session';
+        }
+      }
+
+      // Avatar rendering
       loadInPlaceAvatar(empName);
 
       const assignedSite = getEmployeeWorksite(empName);
@@ -1666,8 +2076,6 @@
 
   </script>
   <script src="sos_pwa_push.js"></script>
-  <script src="sos_cloud_database_engine.js"></script>
   <script src="sos_alert_hub.js"></script>
-  <script src="sos_cloud_sync_bridge.js"></script>
 </body>
 </html>

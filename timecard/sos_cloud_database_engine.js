@@ -1,5 +1,5 @@
 // ============================================================================
-// SPOTLESS SOLUTIONS UNIVERSAL REAL-TIME CLOUD DATABASE ENGINE (Build v101)
+// SPOTLESS SOLUTIONS UNIVERSAL REAL-TIME CLOUD DATABASE ENGINE (Build v105)
 // Authoritative Cloud Database & Live Synchronization for All Apps & Devices
 // Guy (Android / PC), Jacquise (Apple iPhone), and all Field Cleaners
 // ============================================================================
@@ -12,7 +12,14 @@
     endpoint: 'https://ntfy.sh/sos_spotless_database_v1',
     sseEndpoint: 'https://ntfy.sh/sos_spotless_database_v1/sse',
     pollEndpoint: 'https://ntfy.sh/sos_spotless_database_v1/json?poll=1',
-    syncDebounceMs: 400
+    syncDebounceMs: 350
+  };
+
+  const STORAGE_KEYS = {
+    PAYROLL: ['spotless_payroll_state_v1', 'spotless_executive_payroll_v1'],
+    PUNCHES: ['sos_timecard_punches_v1', 'spotless_cleaner_punches_v2'],
+    ADJUSTMENTS: ['sos_adjustments_v1', 'spotless_timecard_adjustments_v1'],
+    AUTH: ['sos_timecard_session_v1', 'sos_timecard_active_emp']
   };
 
   let sseSource = null;
@@ -22,26 +29,51 @@
 
   // 1. GET COMPLETE LOCAL BUSINESS STATE SNAPSHOT
   function getFullLocalSnapshot() {
-    const payrollRaw = localStorage.getItem('spotless_executive_payroll_v1');
-    const punchesRaw = localStorage.getItem('spotless_cleaner_punches_v2');
-    const adjustmentsRaw = localStorage.getItem('spotless_timecard_adjustments_v1');
-    
-    // Collect all employee photos
+    let payrollData = null;
+    for (const k of STORAGE_KEYS.PAYROLL) {
+      const raw = localStorage.getItem(k);
+      if (raw) {
+        try { payrollData = JSON.parse(raw); break; } catch(e) {}
+      }
+    }
+
+    let punchesData = null;
+    for (const k of STORAGE_KEYS.PUNCHES) {
+      const raw = localStorage.getItem(k);
+      if (raw) {
+        try { punchesData = JSON.parse(raw); break; } catch(e) {}
+      }
+    }
+
+    let adjustmentsData = [];
+    for (const k of STORAGE_KEYS.ADJUSTMENTS) {
+      const raw = localStorage.getItem(k);
+      if (raw) {
+        try { adjustmentsData = JSON.parse(raw); break; } catch(e) {}
+      }
+    }
+
+    // Collect all employee photos & raw crops
     const photos = {};
     for (let i = 0; i < localStorage.length; i++) {
       const k = localStorage.key(i);
-      if (k && (k.startsWith('sos_avatar_') || k.startsWith('photo_'))) {
+      if (k && (k.startsWith('sos_photo_') || k.startsWith('sos_raw_photo_') || k.startsWith('sos_avatar_') || k.startsWith('photo_'))) {
         photos[k] = localStorage.getItem(k);
       }
     }
 
+    const activeEmp = localStorage.getItem('sos_timecard_active_emp') || '';
+    const activeSession = localStorage.getItem('sos_timecard_session_v1') || '';
+
     return {
-      payroll: payrollRaw ? JSON.parse(payrollRaw) : null,
-      punches: punchesRaw ? JSON.parse(punchesRaw) : null,
-      adjustments: adjustmentsRaw ? JSON.parse(adjustmentsRaw) : [],
+      payroll: payrollData,
+      punches: punchesData,
+      adjustments: adjustmentsData,
       photos: photos,
+      activeEmp: activeEmp,
+      activeSession: activeSession,
       deviceInfo: {
-        platform: navigator.userAgent.includes('iPhone') ? 'Jacquise iPhone' : 'Guy Android/PC',
+        platform: /iPhone|iPad|iPod/.test(navigator.userAgent) ? 'Jacquise iPhone' : 'Guy Android/PC',
         timestamp: Date.now()
       }
     };
@@ -84,6 +116,42 @@
     }, DB_CONFIG.syncDebounceMs);
   }
 
+  // Helper to merge punch histories without losing any records
+  function mergePunchHistories(localHist = [], remoteHist = []) {
+    const map = new Map();
+    (localHist || []).forEach(p => {
+      if (p) {
+        const key = p.id || `${p.employee || p.employeeName}_${p.timestamp || p.clockInTime}_${p.date}`;
+        map.set(key, p);
+      }
+    });
+    (remoteHist || []).forEach(p => {
+      if (p) {
+        const key = p.id || `${p.employee || p.employeeName}_${p.timestamp || p.clockInTime}_${p.date}`;
+        map.set(key, p);
+      }
+    });
+    return Array.from(map.values()).sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+  }
+
+  // Helper to merge adjustments without losing any records
+  function mergeAdjustments(localAdj = [], remoteAdj = []) {
+    const map = new Map();
+    (localAdj || []).forEach(a => {
+      if (a) {
+        const key = a.id || `${a.employeeName}_${a.date}_${a.hours}`;
+        map.set(key, a);
+      }
+    });
+    (remoteAdj || []).forEach(a => {
+      if (a) {
+        const key = a.id || `${a.employeeName}_${a.date}_${a.hours}`;
+        map.set(key, a);
+      }
+    });
+    return Array.from(map.values()).sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+  }
+
   // 3. HYDRATE LOCAL STATE FROM CLOUD DATABASE (READ)
   function applyCloudSnapshot(snapshot, sourceTimestamp) {
     if (!snapshot) return;
@@ -93,29 +161,65 @@
     console.log('🔄 [Cloud Database] Applying live snapshot from cloud...');
 
     try {
-      // A. Hydrate Payroll State (Roster, Expenses, Worksites, Tax Vault, Reserves)
+      // A. Hydrate Payroll State (Roster, Expenses, Worksites, Tax Vault, Reserves, Timecard Archive)
       if (snapshot.payroll) {
-        localStorage.setItem('spotless_executive_payroll_v1', JSON.stringify(snapshot.payroll));
+        STORAGE_KEYS.PAYROLL.forEach(k => {
+          localStorage.setItem(k, JSON.stringify(snapshot.payroll));
+        });
         if (window.AppData) {
           window.AppData = snapshot.payroll;
         }
-        if (window.refreshUI) window.refreshUI();
-        if (window.render) window.render();
+        if (typeof window.refreshUI === 'function') window.refreshUI();
+        if (typeof window.render === 'function') window.render();
+        if (typeof window.renderTimecardsTable === 'function') window.renderTimecardsTable();
       }
 
-      // B. Hydrate Timecard Punches & Shifts
+      // B. Hydrate Timecard Punches & Permanent History (Merge to protect all records)
       if (snapshot.punches) {
-        localStorage.setItem('spotless_cleaner_punches_v2', JSON.stringify(snapshot.punches));
+        let currentLocalPunches = { activePunches: {}, history: [] };
+        try {
+          const rawP = localStorage.getItem('sos_timecard_punches_v1');
+          if (rawP) currentLocalPunches = JSON.parse(rawP);
+        } catch(e) {}
+
+        const mergedHistory = mergePunchHistories(currentLocalPunches.history, snapshot.punches.history);
+        const mergedActive = Object.assign({}, currentLocalPunches.activePunches || {}, snapshot.punches.activePunches || {});
+
+        const combinedPunches = {
+          activePunches: mergedActive,
+          history: mergedHistory
+        };
+
+        STORAGE_KEYS.PUNCHES.forEach(k => {
+          localStorage.setItem(k, JSON.stringify(combinedPunches));
+        });
+
         if (window.punchState) {
-          window.punchState = snapshot.punches;
+          window.punchState = combinedPunches;
         }
-        if (window.renderView) window.renderView();
+        if (typeof window.renderView === 'function') window.renderView();
+        if (typeof window.renderTimecardsTable === 'function') window.renderTimecardsTable();
       }
 
-      // C. Hydrate Adjustments & Alerts
+      // C. Hydrate Adjustments & Alerts (Merge to protect all requests)
       if (snapshot.adjustments && Array.isArray(snapshot.adjustments)) {
-        localStorage.setItem('spotless_timecard_adjustments_v1', JSON.stringify(snapshot.adjustments));
-        if (window.updateBellAlerts) window.updateBellAlerts();
+        let currentLocalAdj = [];
+        try {
+          const rawA = localStorage.getItem('sos_adjustments_v1');
+          if (rawA) currentLocalAdj = JSON.parse(rawA);
+        } catch(e) {}
+
+        const combinedAdj = mergeAdjustments(currentLocalAdj, snapshot.adjustments);
+
+        STORAGE_KEYS.ADJUSTMENTS.forEach(k => {
+          localStorage.setItem(k, JSON.stringify(combinedAdj));
+        });
+
+        if (window.adjustments) {
+          window.adjustments = combinedAdj;
+        }
+        if (typeof window.updateBellAlerts === 'function') window.updateBellAlerts();
+        if (typeof window.renderView === 'function') window.renderView();
       }
 
       // D. Hydrate Employee Profile Photos
@@ -123,7 +227,10 @@
         for (const [k, v] of Object.entries(snapshot.photos)) {
           if (v) localStorage.setItem(k, v);
         }
-        if (window.renderDirectAvatarCanvas) window.renderDirectAvatarCanvas();
+        if (typeof window.renderDirectAvatarCanvas === 'function') window.renderDirectAvatarCanvas();
+        if (typeof window.loadInPlaceAvatar === 'function' && typeof window.getActiveName === 'function') {
+          window.loadInPlaceAvatar(window.getActiveName());
+        }
       }
 
       if (sourceTimestamp) lastSyncTimestamp = sourceTimestamp;
@@ -201,7 +308,7 @@
   bootInitialCloudDatabase();
   initLiveDatabaseStream();
 
-  // Re-poll on window focus
+  // Re-poll on window focus & online
   window.addEventListener('focus', bootInitialCloudDatabase);
   window.addEventListener('online', () => {
     bootInitialCloudDatabase();
