@@ -1486,18 +1486,48 @@ Open SOS Payroll: https://chickeringguycell-dotcom.github.io/sos-payroll-app/`;
           body: smsContent
         }).catch(() => {});
 
-        // 2. Dispatch via TextBelt REST SMS
-        [OWNER_GUY_PHONE, OWNER_JACQUISE_PHONE].forEach(phoneNum => {
-          fetch('https://textbelt.com/text', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              phone: phoneNum,
-              message: smsContent,
-              key: 'textbelt'
-            })
-          }).catch(() => {});
-        });
+        // 2. Direct Twilio REST Carrier SMS Dispatch (to Guy & Jacquise)
+        try {
+          const twilioConfig = JSON.parse(localStorage.getItem('SOS_TWILIO_CONFIG') || 'null');
+          if (twilioConfig && twilioConfig.accountSid && twilioConfig.authToken && twilioConfig.fromPhone) {
+            [OWNER_GUY_PHONE, OWNER_JACQUISE_PHONE].forEach(targetPhone => {
+              const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${twilioConfig.accountSid}/Messages.json`;
+              const authHeader = 'Basic ' + btoa(`${twilioConfig.accountSid}:${twilioConfig.authToken}`);
+              const formData = new URLSearchParams();
+              formData.append('To', '+1' + targetPhone);
+              formData.append('From', twilioConfig.fromPhone);
+              formData.append('Body', smsContent);
+
+              fetch(twilioUrl, {
+                method: 'POST',
+                headers: {
+                  'Authorization': authHeader,
+                  'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: formData.toString()
+              }).catch(() => {});
+            });
+          }
+        } catch(e) {}
+
+        // 3. Direct Custom SMS Webhook Dispatch (Zapier, AWS SNS, Make, Pipedream)
+        try {
+          const customWebhookUrl = localStorage.getItem('SOS_CUSTOM_SMS_WEBHOOK');
+          if (customWebhookUrl) {
+            fetch(customWebhookUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                recipients: ['+1' + OWNER_GUY_PHONE, '+1' + OWNER_JACQUISE_PHONE],
+                employeeName: alertObj.employeeName,
+                action: punchWord,
+                distanceMiles: alertObj.distanceMiles,
+                message: smsContent,
+                timestamp: new Date().toISOString()
+              })
+            }).catch(() => {});
+          }
+        } catch(e) {}
 
       } catch (err) {
         console.warn('[SMS Dispatcher] Error:', err);
