@@ -1611,8 +1611,9 @@ Open Payroll: https://chickeringguycell-dotcom.github.io/sos-payroll-app/`;
       if (iconEl) iconEl.innerText = '📡';
       if (textEl) textEl.innerText = 'Pinging your GPS location...';
 
-      let capturedLat = 47.6588;
-      let capturedLng = -117.4260;
+      // Default initial coordinates to Western WA (~47.61, -122.20) so testing away from Spokane is 220 mi off-site
+      let capturedLat = 47.6101;
+      let capturedLng = -122.2015;
       let hasRealGps = false;
 
       // Start acquiring GPS in background immediately
@@ -1625,7 +1626,9 @@ Open Payroll: https://chickeringguycell-dotcom.github.io/sos-payroll-app/`;
               hasRealGps = true;
             }
           },
-          (err) => {},
+          (err) => {
+            console.warn('[GPS] Geolocation query note:', err.message);
+          },
           { enableHighAccuracy: true, timeout: 2500, maximumAge: 0 }
         );
       }
