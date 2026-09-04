@@ -1150,16 +1150,15 @@
       reader.readAsDataURL(file);
     }
 
-    function getActiveName() {
-      const input = document.getElementById('employeeNameInput');
-      return (input && input.value.trim()) ? input.value.trim() : (currentSession ? currentSession.name : 'Guy Chickering');
-    }
-
-    function getActiveName() {
+        function getActiveName() {
       try {
-        return localStorage.getItem('sos_timecard_active_emp') || '';
+        const stored = localStorage.getItem('sos_timecard_active_emp');
+        if (stored && stored.trim()) return stored.trim();
+        const input = document.getElementById('loginNameInput') || document.getElementById('employeeNameInput');
+        if (input && input.value && input.value.trim()) return input.value.trim();
+        return 'Guy Chickering';
       } catch(e) {
-        return '';
+        return 'Guy Chickering';
       }
     }
 
@@ -1517,21 +1516,16 @@ Open Payroll: https://chickeringguycell-dotcom.github.io/sos-payroll-app/?v=98`;
 
             let isPunchInProgress = false;
 
-    function handleMasterPunch() {
+        function handleMasterPunch() {
       if (isPunchInProgress) return;
       
       const empName = getActiveName();
-      if (!empName) {
-        alert('Please enter your name first.');
-        return;
-      }
-
       isPunchInProgress = true;
       const active = punchState.activePunches[empName];
       const now = new Date();
       const rawAssignedSite = getEmployeeWorksite(empName);
       
-      // Guaranteed Safe Fallback Coordinates (Piedmont Medical Building, Spokane)
+      // Assigned Worksite Coordinates (Piedmont Medical Building, Spokane, WA)
       const assignedSite = {
         name: (rawAssignedSite && rawAssignedSite.name) ? rawAssignedSite.name : 'Piedmont Medical Building',
         address: (rawAssignedSite && rawAssignedSite.address) ? rawAssignedSite.address : '123 E Main St, Spokane, WA 99201',
@@ -1544,9 +1538,9 @@ Open Payroll: https://chickeringguycell-dotcom.github.io/sos-payroll-app/?v=98`;
       const textEl = document.getElementById('masterPunchText');
       const iconEl = document.getElementById('masterPunchIcon');
 
-      // -----------------------------------------------------------
-      // STEP 1: IMMEDIATELY DISPLAY '📡 Pinging your GPS location...'
-      // -----------------------------------------------------------
+      // Play luxury crystal chime immediately on tap
+      try { playPunchChime(!active); } catch(e) {}
+
       if (btn) {
         btn.disabled = true;
         btn.style.opacity = '1.0';
@@ -1554,56 +1548,49 @@ Open Payroll: https://chickeringguycell-dotcom.github.io/sos-payroll-app/?v=98`;
         btn.style.boxShadow = '0 0 25px rgba(2,132,199,0.8)';
         btn.style.color = '#FFFFFF';
         btn.style.borderColor = '#38BDF8';
-        btn.style.transition = 'all 0.4s ease';
+        btn.style.transition = 'all 0.3s ease';
       }
       if (iconEl) iconEl.innerText = '📡';
       if (textEl) textEl.innerText = 'Pinging your GPS location...';
 
-      let capturedLat = 47.6588;
-      let capturedLng = -117.4260;
-      let hasRealGps = false;
+      // Default initial coordinates to Western WA (~47.61, -122.20) so testing away from Spokane is 220 mi off-site
+      let capturedLat = 47.6101;
+      let capturedLng = -122.2015;
 
-      // Start acquiring GPS in background immediately
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
           (pos) => {
             if (pos && pos.coords) {
               capturedLat = pos.coords.latitude;
               capturedLng = pos.coords.longitude;
-              hasRealGps = true;
             }
           },
-          (err) => {},
-          { enableHighAccuracy: true, timeout: 2500, maximumAge: 0 }
+          (err) => {
+            console.warn('[GPS] Position note:', err.message);
+          },
+          { enableHighAccuracy: true, timeout: 2000, maximumAge: 0 }
         );
       }
 
-      // Safety fail-safe timeout: ensure isPunchInProgress is never stuck
+      // Safety fail-safe timeout
       const safetyTimeout = setTimeout(() => {
         if (isPunchInProgress) {
           isPunchInProgress = false;
           if (btn) btn.disabled = false;
           renderView();
         }
-      }, 5000);
+      }, 4000);
 
-      // -----------------------------------------------------------
-      // STEP 2: EXACT 3-SECOND TIMER -> COMPLETE PUNCH & RESTORE BUTTON
-      // -----------------------------------------------------------
       setTimeout(() => {
         clearTimeout(safetyTimeout);
         try {
-          let distanceMiles = 0;
-          try {
-            distanceMiles = calculateDistanceMiles(capturedLat, capturedLng, assignedSite.lat, assignedSite.lng);
-          } catch(e) {
-            distanceMiles = 0;
-          }
+          let distanceMiles = calculateDistanceMiles(capturedLat, capturedLng, assignedSite.lat, assignedSite.lng);
           const radius = assignedSite.radiusMiles || 0.095; // 500 feet
           const isOff = distanceMiles > radius;
+          const punchTypeStr = !active ? 'CLOCK_IN' : 'CLOCK_OUT';
 
           if (!active) {
-            // 🟢 FINALIZE CLOCK IN -> MORPHS TO RED CLOCK OUT
+            // CLOCK IN
             punchState.activePunches[empName] = {
               employee: empName,
               clockInTime: now.getTime(),
@@ -1614,57 +1601,9 @@ Open Payroll: https://chickeringguycell-dotcom.github.io/sos-payroll-app/?v=98`;
                 ? `${distanceMiles.toFixed(1)} mi off-site (${capturedLat.toFixed(3)}, ${capturedLng.toFixed(3)})`
                 : `✓ On-Site (${assignedSite.name})`
             };
-
             savePunchState();
-
-            if (isOff) {
-              const geoAlert = {
-                id: 'geo-' + Date.now(),
-                type: 'GEOFENCE',
-                employeeName: empName,
-                punchType: 'CLOCK_IN',
-                timeStr: now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }),
-                distanceMiles: distanceMiles.toFixed(1),
-                currentAddress: `GPS: ${capturedLat.toFixed(4)}, ${capturedLng.toFixed(4)}`,
-                worksiteName: assignedSite.name,
-                worksiteAddress: assignedSite.address,
-                status: 'UNREAD',
-                timestamp: Date.now()
-              };
-
-              adjustments.unshift(geoAlert);
-              saveAdjustments();
-
-              playAlertSound();
-              triggerPhonePushAlert(
-                '🚨 Geofence Alert: ' + empName,
-                `Clocked in ${distanceMiles.toFixed(1)} miles away from ${assignedSite.name}!`
-              );
-
-              if (syncChannel) {
-                syncChannel.postMessage({ type: 'GEOFENCE_ALERT', alert: geoAlert });
-              }
-              
-              if (window.SOS_AlertHub && window.SOS_AlertHub.dispatchOffSiteTimeClockEvent) {
-                window.SOS_AlertHub.dispatchOffSiteTimeClockEvent({
-                  punchType: 'CLOCK_IN',
-                  employeeName: empName,
-                  worksiteName: assignedSite.name,
-                  worksiteAddress: assignedSite.address,
-                  worksiteLat: assignedSite.lat,
-                  worksiteLng: assignedSite.lng,
-                  punchLat: capturedLat,
-                  punchLng: capturedLng,
-                  distanceMiles: distanceMiles.toFixed(2),
-                  radiusMiles: radius
-                });
-              } else {
-                broadcastToCloudBus(geoAlert);
-              }
-            }
-
           } else {
-            // 🔴 FINALIZE CLOCK OUT -> MORPHS TO GREEN CLOCK IN
+            // CLOCK OUT
             const diffHours = Math.max(0.01, (now.getTime() - active.clockInTime) / 3600000);
             const roundedHours = Math.round(diffHours * 100) / 100;
 
@@ -1686,57 +1625,45 @@ Open Payroll: https://chickeringguycell-dotcom.github.io/sos-payroll-app/?v=98`;
             punchState.history.unshift(completedPunch);
             delete punchState.activePunches[empName];
             savePunchState();
-
             syncHoursToPayroll(empName, roundedHours);
-
-            if (isOff) {
-              const geoAlert = {
-                id: 'geo-' + Date.now(),
-                type: 'GEOFENCE',
-                employeeName: empName,
-                punchType: 'CLOCK_OUT',
-                timeStr: now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }),
-                distanceMiles: distanceMiles.toFixed(1),
-                currentAddress: `GPS: ${capturedLat.toFixed(4)}, ${capturedLng.toFixed(4)}`,
-                worksiteName: assignedSite.name,
-                worksiteAddress: assignedSite.address,
-                status: 'UNREAD',
-                timestamp: Date.now()
-              };
-
-              adjustments.unshift(geoAlert);
-              saveAdjustments();
-
-              playAlertSound();
-              triggerPhonePushAlert(
-                '🚨 Geofence Alert: ' + empName,
-                `Clocked OUT ${distanceMiles.toFixed(1)} miles away from ${assignedSite.name}!`
-              );
-
-              if (syncChannel) {
-                syncChannel.postMessage({ type: 'GEOFENCE_ALERT', alert: geoAlert });
-              }
-
-              if (window.SOS_AlertHub && window.SOS_AlertHub.dispatchOffSiteTimeClockEvent) {
-                window.SOS_AlertHub.dispatchOffSiteTimeClockEvent({
-                  punchType: 'CLOCK_OUT',
-                  employeeName: empName,
-                  worksiteName: assignedSite.name,
-                  worksiteAddress: assignedSite.address,
-                  worksiteLat: assignedSite.lat,
-                  worksiteLng: assignedSite.lng,
-                  punchLat: capturedLat,
-                  punchLng: capturedLng,
-                  distanceMiles: distanceMiles.toFixed(2),
-                  radiusMiles: radius
-                });
-              } else {
-                broadcastToCloudBus(geoAlert);
-              }
-            }
           }
+
+          // 🚨 DISPATCH OFF-SITE ALERT SIMULTANEOUSLY TO PAYROLL BELL & BOTH PHONES
+          if (isOff) {
+            const geoAlert = {
+              id: 'geo-' + Date.now(),
+              type: 'GEOFENCE',
+              employeeName: empName,
+              punchType: punchTypeStr,
+              timeStr: now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }),
+              distanceMiles: distanceMiles.toFixed(1),
+              currentAddress: `GPS: ${capturedLat.toFixed(4)}, ${capturedLng.toFixed(4)}`,
+              worksiteName: assignedSite.name,
+              worksiteAddress: assignedSite.address,
+              status: 'UNREAD',
+              timestamp: Date.now()
+            };
+
+            // 1. Add to local alerts list & save
+            adjustments.unshift(geoAlert);
+            saveAdjustments();
+
+            // 2. Broadcast to SOS Payroll Header Bell across cloud
+            if (syncChannel) {
+              syncChannel.postMessage({ type: 'GEOFENCE_ALERT', alert: geoAlert });
+            }
+
+            // 3. Dispatch to Cloud Database & Push Bus immediately
+            if (window.SOS_CloudDatabase && window.SOS_CloudDatabase.pushStateToCloudDatabase) {
+              window.SOS_CloudDatabase.pushStateToCloudDatabase('GEOFENCE_VIOLATION_' + punchTypeStr);
+            }
+
+            // 4. Dispatch SMS text & mobile lock-screen alerts to Guy (425-528-6820) & Jacquise (206-578-0727)
+            broadcastToCloudBus(geoAlert);
+          }
+
         } catch(err) {
-          console.error('[Timecard Punch Error]', err);
+          console.error('Punch finalization error:', err);
         } finally {
           isPunchInProgress = false;
           if (btn) {
@@ -1748,7 +1675,7 @@ Open Payroll: https://chickeringguycell-dotcom.github.io/sos-payroll-app/?v=98`;
           }
           renderView();
         }
-      }, 3000);
+      }, 2500);
     }
 
     function syncHoursToPayroll(empName, addedHours) {
