@@ -503,21 +503,18 @@
           <!-- LEFT SIDE: Name & Worksite on Top, Square Photo Frame on Bottom Left -->
           <div style="display:flex; flex-direction:column; align-items:flex-start; justify-content:space-between; gap:10px; min-width:0; flex-shrink:1;">
             
-            <!-- Top Left: Employee Name, Worksite Badge & Sign-in Time -->
+            <!-- Top Left: Employee Name & Worksite Badge -->
             <div>
               <div style="font-size:10px; color:var(--text-muted); font-weight:700; text-transform:uppercase;">👤 Employee Profile</div>
               <div id="loggedInEmpName" style="font-size:18px; font-weight:900; color:#FFF; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Guy Chickering</div>
-              <div id="displayWorksiteContainer" style="margin-top:3px; display:flex; flex-direction:column; gap:2px;">
-                <span id="displayWorksiteBadge" style="font-size:10px; font-weight:700; color:var(--gold); background:rgba(212,175,55,0.15); padding:2px 6px; border-radius:6px; border:1px solid var(--gold); display:none; white-space:nowrap; width:fit-content;">
+              <div id="displayWorksiteContainer" style="margin-top:3px;">
+                <span id="displayWorksiteBadge" style="font-size:10px; font-weight:700; color:var(--gold); background:rgba(212,175,55,0.15); padding:2px 6px; border-radius:6px; border:1px solid var(--gold); display:none; white-space:nowrap;">
                   🏢 Worksite
                 </span>
-                <div id="displaySignInStamp" style="font-size:10px; font-weight:700; color:#94A3B8; margin-top:2px;">
-                  🔑 Signed in: <span id="signInTimeLabel" style="color:var(--gold-light); font-weight:800;">--</span>
-                </div>
               </div>
             </div>
 
-            <!-- Bottom Left: Interactive Touch-Draggable Square Photo Frame -->
+                        <!-- Bottom Left: Interactive Touch-Draggable Square Photo Frame -->
             <div style="position:relative;">
               <div id="empAvatarContainer" style="width:78px; height:78px; min-width:78px; border-radius:12px; border:2.5px solid var(--gold); box-shadow:0 0 16px rgba(212,175,55,0.45); overflow:hidden; background:linear-gradient(135deg, #1C222E 0%, #10141C 100%); display:flex; align-items:center; justify-content:center; cursor:grab; touch-action:none; user-select:none; position:relative;" title="Put your finger on photo to drag & center, lift off to save!">
                 <span id="empAvatarInitials" style="font-size:26px; font-weight:900; color:var(--gold-light);">GC</span>
@@ -562,15 +559,13 @@
     </div>
 
     <!-- Box 4: Live Real-Time Clock Station -->
-    <div class="uniform-box uniform-box-gold clock-station-box" style="padding:14px 18px; position:relative; background:radial-gradient(circle, #1A1F2C 0%, #11141C 100%);">
-      <div style="display:flex; justify-content:space-between; align-items:center; width:100%; margin-bottom:2px;">
-        <div class="live-date-corner" id="clockDate" style="font-size:12px; font-weight:800; color:var(--gold-light); text-transform:uppercase; letter-spacing:0.8px;">--</div>
-        <div class="live-badge" style="margin-top:0; padding:2px 10px; font-size:10px; border-radius:12px;">
-          <div class="live-dot"></div>
-          <span>Live Station Clock</span>
-        </div>
+    <div class="uniform-box uniform-box-gold clock-station-box">
+      <div class="live-time" id="clockTime">--:--:-- --</div>
+      <div class="live-date" id="clockDate">Loading date...</div>
+      <div class="live-badge">
+        <div class="live-dot"></div>
+        <span>Live Real-Time Clock</span>
       </div>
-      <div class="live-time" id="clockTime" style="font-size:42px; font-weight:900; color:#FFFFFF; letter-spacing:2px; line-height:1.1; margin:6px 0 2px 0; text-align:center; text-shadow:0 0 20px rgba(212,175,55,0.45); font-variant-numeric:tabular-nums;">--:--:-- --</div>
     </div>
 
     <!-- Box 5: Unified Master Action Card & Button (Green Clock In <-> Red Clock Out) -->
@@ -1147,17 +1142,33 @@
     }
 
     function getActiveName() {
-      const input = document.getElementById('employeeNameInput');
-      return (input && input.value.trim()) ? input.value.trim() : (currentSession ? currentSession.name : 'Guy Chickering');
-    }
-
-    function getActiveName() {
       try {
-        return localStorage.getItem('sos_timecard_active_emp') || '';
+        const stored = localStorage.getItem('sos_timecard_active_emp');
+        if (stored && stored.trim()) return stored.trim();
+        if (currentSession && currentSession.name && currentSession.name.trim()) return currentSession.name.trim();
+        const input = document.getElementById('loginNameInput') || document.getElementById('employeeNameInput');
+        if (input && input.value && input.value.trim()) return input.value.trim();
+        return 'Guy Chickering';
       } catch(e) {
-        return '';
+        return 'Guy Chickering';
       }
     }
+
+    window.applyAppUpdateNow = async function() {
+      if ('serviceWorker' in navigator) {
+        try {
+          const regs = await navigator.serviceWorker.getRegistrations();
+          for (const r of regs) await r.unregister();
+        } catch (e) {}
+      }
+      if ('caches' in window) {
+        try {
+          const keys = await caches.keys();
+          await Promise.all(keys.map(k => caches.delete(k)));
+        } catch (e) {}
+      }
+      window.location.reload(true);
+    };
 
     function handleTimecardLogin() {
       const name = (document.getElementById('loginNameInput').value || '').trim();
@@ -1171,6 +1182,7 @@
       try {
         localStorage.setItem('sos_timecard_active_emp', name);
         if (dob) localStorage.setItem('sos_timecard_active_dob', dob);
+        saveSession({ name: name, dob: dob, loggedInAt: Date.now() });
       } catch(e) {}
 
       renderView();
@@ -1247,6 +1259,8 @@
       try {
         localStorage.removeItem('sos_timecard_active_emp');
         localStorage.removeItem('sos_timecard_active_dob');
+        localStorage.removeItem(STORAGE_AUTH_KEY);
+        currentSession = null;
       } catch(e) {}
 
       const nameInput = document.getElementById('loginNameInput');
@@ -1884,17 +1898,7 @@ Open Payroll: https://chickeringguycell-dotcom.github.io/sos-payroll-app/`;
       if (panelLoggedIn) panelLoggedIn.style.display = 'block';
       if (nameDisp) nameDisp.innerText = empName;
 
-      const signInLabel = document.getElementById('signInTimeLabel');
-      if (signInLabel) {
-        if (currentSession && currentSession.loggedInAt) {
-          const sDate = new Date(currentSession.loggedInAt);
-          signInLabel.innerText = sDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) + ' • ' + sDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
-        } else {
-          signInLabel.innerText = 'Active Session';
-        }
-      }
-
-      // Avatar rendering
+            // Avatar rendering
       loadInPlaceAvatar(empName);
 
       const assignedSite = getEmployeeWorksite(empName);

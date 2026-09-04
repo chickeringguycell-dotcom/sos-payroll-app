@@ -2,28 +2,19 @@
   "name": "Spotless Solutions - SOS Timecard",
   "short_name": "SOS Timecard",
   "description": "Spotless Solutions Cleaner Mobile Time Tracking & GPS Geofence Portal",
-  "start_url": "./timecard.html?source=pwa",
+  "start_url": "SOS_Timecard.html",
   "scope": "./",
   "display": "standalone",
   "background_color": "#090A0D",
   "theme_color": "#D4AF37",
   "orientation": "portrait-primary",
-  "categories": [
-    "business",
-    "productivity"
-  ],
+  "categories": ["business", "productivity"],
   "icons": [
     {
       "src": "icon-192-tc.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
-    },
-    {
-      "src": "apple-touch-icon-tc.png",
-      "sizes": "180x180",
-      "type": "image/png",
-      "purpose": "any"
     },
     {
       "src": "icon-512-tc.png",

@@ -1101,13 +1101,9 @@
       return getInitialState();
     }
 
-        function saveState() {
+    function saveState() {
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(AppData));
-        if (syncChannel) syncChannel.postMessage({ type: 'REFRESH_PAYROLL' });
-        if (window.SOS_CloudDatabase && window.SOS_CloudDatabase.pushStateToCloudDatabase) {
-          window.SOS_CloudDatabase.pushStateToCloudDatabase('PAYROLL_STATE_CHANGE');
-        }
       } catch (e) {}
     }
 
@@ -2153,7 +2149,7 @@
       lastAlertCount = totalCount;
     }
 
-        window.openApprovalModal = function(activeAlertIndex = 0) {
+    window.openApprovalModal = function(activeAlertIndex = 0) {
       const mc = document.getElementById('modal-container');
       const adjs = getAdjustments();
       const pendingHours = adjs.filter(a => a.status === 'PENDING' && (!a.type || a.type === 'HOURS_ADJUSTMENT'));
@@ -2167,17 +2163,17 @@
       let headerSubtitle = '';
 
       if (totalCount === 0) {
-        headerTitle = '🔔 Real-Time Alerts & Shift Violations';
-        headerSubtitle = 'Spotless Office Solutions LLC — Automated Geofence Monitoring';
+        headerTitle = '🔔 ALERTS';
+        headerSubtitle = 'All Clear — 0 Active Alerts on File';
         bodyContent = `
           <div style="text-align:center; padding:36px 16px; color:var(--text-muted);">
             <div style="font-size:42px; margin-bottom:12px;">🛡️</div>
             <div style="font-weight:900; color:#10B981; font-size:17px; letter-spacing:0.5px;">✓ All Clear — Zero Active Alerts</div>
             <div style="font-size:12px; color:#94A3B8; margin-top:6px; line-height:1.5; margin-bottom:20px; max-width:420px; margin-left:auto; margin-right:auto;">
-              All staff punches are currently verified on-site within assigned geofence boundaries. When an off-site punch or login occurs, an immediate alert and SMS text will notify both Guy and Jacquise.
+              All staff punches are currently verified on-site within assigned geofences. When an off-site punch or login occurs, it will automatically alert both phones.
             </div>
             <div style="display:flex; justify-content:center; gap:10px; flex-wrap:wrap;">
-              <button onclick="window.SOS_AlertHub && window.SOS_AlertHub.triggerTestAlertToPhones ? window.SOS_AlertHub.triggerTestAlertToPhones() : alert('📲 Automated SMS & Cloud Alerts are active for Guy (425-528-6820) and Jacquise (206-578-0727).')" style="background:linear-gradient(135deg, #0284C7 0%, #0369A1 100%); color:#FFF; font-weight:800; font-size:13px; padding:10px 18px; border-radius:10px; border:none; cursor:pointer; box-shadow:0 4px 15px rgba(2,132,199,0.4); display:inline-flex; align-items:center; gap:8px;">
+              <button onclick="window.SOS_AlertHub && window.SOS_AlertHub.triggerTestAlertToPhones()" style="background:linear-gradient(135deg, #0284C7 0%, #0369A1 100%); color:#FFF; font-weight:800; font-size:13px; padding:10px 18px; border-radius:10px; border:none; cursor:pointer; box-shadow:0 4px 15px rgba(2,132,199,0.4); display:inline-flex; align-items:center; gap:8px;">
                 📲 Send Test Alert to Guy & Jacquise
               </button>
               <button onclick="closeModal('custom')" class="btn-dark" style="padding:10px 18px; border-radius:10px; font-weight:800; font-size:13px;">
@@ -2191,8 +2187,8 @@
         const currentAlert = allActiveAlerts[safeIndex];
         const remainingCount = totalCount - 1;
 
-        headerTitle = '🚨 Critical Geofence Violation Alert';
-        headerSubtitle = `Off-Site Incident ${safeIndex + 1} of ${totalCount} • Dispatched to Guy & Jacquise`;
+        headerTitle = '🔔 ALERTS';
+        headerSubtitle = `Alert ${safeIndex + 1} of ${totalCount} (Dispatch to Guy & Jacquise)`;
 
         if (currentAlert.type === 'GEOFENCE') {
           const geo = currentAlert;
@@ -2231,20 +2227,20 @@
                 <div style="font-size:12px; font-weight:700; color:#94A3B8;">
                   ${remainingCount > 0 ? `(${remainingCount} more alert${remainingCount > 1 ? 's' : ''} queued)` : '✓ Final alert in queue'}
                 </div>
-                <button onclick="dismissAndShowNextAlert('${geo.id}')" style="background:linear-gradient(135deg, #10B981 0%, #059669 100%); color:#FFF; font-weight:900; font-size:13px; padding:10px 18px; border-radius:8px; border:none; cursor:pointer;">
-                  ✓ Acknowledge & Dismiss
+                <button onclick="dismissAndShowNextAlert('${geo.id}')" style="background:linear-gradient(135deg, #10B981 0%, #059669 100%); color:#000; font-weight:900; font-size:13px; padding:10px 18px; border-radius:10px; border:none; cursor:pointer; box-shadow:0 4px 15px rgba(16,185,129,0.3); display:inline-flex; align-items:center; gap:6px;">
+                  ✓ Acknowledge & ${remainingCount > 0 ? 'Next Alert ➔' : 'Finish'}
                 </button>
               </div>
             </div>
           `;
         } else {
-          // Hours Adjustment Request
+          // Employee Hours Request (only if submitted by cleaner)
           const req = currentAlert;
           bodyContent = `
-            <div style="background:var(--silver-light); border:1px solid var(--gold-dark); border-radius:14px; padding:16px; margin-bottom:14px;">
+            <div style="background:var(--silver-light); border:2px solid var(--gold-dark); border-radius:16px; padding:18px; margin-bottom:16px;">
               <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
                 <span style="font-weight:900; font-size:16px; color:var(--text-main);">👤 ${req.employeeName}</span>
-                <span style="font-weight:900; font-size:15px; color:var(--gold-light); background:rgba(212,175,55,0.15); padding:3px 8px; border-radius:8px; border:1px solid var(--gold);">+${Number(req.hours).toFixed(2)} hrs</span>
+                <span style="font-weight:900; font-size:14px; color:var(--gold-light); background:rgba(212,175,55,0.15); padding:3px 8px; border-radius:8px; border:1px solid var(--gold);">+${Number(req.hours).toFixed(2)} hrs</span>
               </div>
               <div style="font-size:13px; color:var(--silver); margin-bottom:6px;">
                 <strong>Date:</strong> ${req.dateDisplay || req.date}
@@ -3977,8 +3973,6 @@ Status: Completed / Paid
   </script>
 
   <script src="sos_pwa_push.js"></script>
-  <script src="sos_cloud_database_engine.js"></script>
   <script src="sos_alert_hub.js"></script>
-  <script src="sos_cloud_sync_bridge.js"></script>
 </body>
 </html>

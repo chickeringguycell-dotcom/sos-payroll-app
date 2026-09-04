@@ -1,17 +1,14 @@
 {
-  "name": "Spotless Solutions - SOS Payroll Executive Suite",
+  "name": "Spotless Solutions - SOS Payroll",
   "short_name": "SOS Payroll",
-  "description": "Spotless Solutions Executive Payroll, Tax Vault, Working Capital & Cash Management Suite",
-  "start_url": "./?source=pwa",
+  "description": "Spotless Solutions Executive Payroll, Tax Reserve & Capital Suite",
+  "start_url": "SOS_Payroll.html",
   "scope": "./",
   "display": "standalone",
   "background_color": "#090A0D",
   "theme_color": "#D4AF37",
   "orientation": "any",
-  "categories": [
-    "business",
-    "finance"
-  ],
+  "categories": ["business", "finance"],
   "icons": [
     {
       "src": "icon-192-pay.png",
@@ -22,12 +19,6 @@
     {
       "src": "icon-192.png",
       "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "apple-touch-icon.png",
-      "sizes": "180x180",
       "type": "image/png",
       "purpose": "any"
     },
