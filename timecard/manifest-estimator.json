@@ -1,20 +1,17 @@
 {
-  "name": "Spotless Solutions - SOS Payroll Executive Suite",
-  "short_name": "SOS Payroll",
-  "description": "Spotless Solutions Executive Payroll, Tax Vault, Working Capital & Cash Management Suite",
-  "start_url": "./?source=pwa",
+  "name": "Spotless Solutions - Spotless Estimator",
+  "short_name": "SOS Estimator",
+  "description": "Spotless Solutions Commercial Estimating, Square Footage & Proposal Studio",
+  "start_url": "Spotless_Estimator.html",
   "scope": "./",
   "display": "standalone",
   "background_color": "#090A0D",
   "theme_color": "#D4AF37",
   "orientation": "any",
-  "categories": [
-    "business",
-    "finance"
-  ],
+  "categories": ["business", "productivity"],
   "icons": [
     {
-      "src": "icon-192-pay.png",
+      "src": "icon-192-est.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
@@ -22,12 +19,6 @@
     {
       "src": "icon-192.png",
       "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "apple-touch-icon.png",
-      "sizes": "180x180",
       "type": "image/png",
       "purpose": "any"
     },

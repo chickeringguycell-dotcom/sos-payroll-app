@@ -1,49 +1,41 @@
 {
-  "name": "Spotless Solutions Business Suite",
-  "short_name": "Spotless Suite",
-  "description": "Spotless Office Solutions Commercial Platform - Payroll, Timecard, & Estimator",
-  "start_url": "SOS_Payroll.html",
+  "name": "Spotless Solutions - SOS Payroll Executive Suite",
+  "short_name": "SOS Payroll",
+  "description": "Spotless Solutions Executive Payroll, Tax Vault, Working Capital & Cash Management Suite",
+  "start_url": "./?source=pwa",
   "scope": "./",
   "display": "standalone",
   "background_color": "#090A0D",
   "theme_color": "#D4AF37",
   "orientation": "any",
-  "categories": ["business", "productivity", "finance"],
+  "categories": [
+    "business",
+    "finance"
+  ],
   "icons": [
+    {
+      "src": "icon-192-pay.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
     {
       "src": "icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
     },
     {
       "src": "icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
-    }
-  ],
-  "shortcuts": [
-    {
-      "name": "SOS Payroll",
-      "short_name": "Payroll",
-      "description": "Executive Payroll, Taxes & Cash Capital",
-      "url": "SOS_Payroll.html",
-      "icons": [{ "src": "icon-192-pay.png", "sizes": "192x192" }]
-    },
-    {
-      "name": "SOS Timecard",
-      "short_name": "Timecard",
-      "description": "GPS Geofenced Clock In & Out",
-      "url": "SOS_Timecard.html",
-      "icons": [{ "src": "icon-192-tc.png", "sizes": "192x192" }]
-    },
-    {
-      "name": "Spotless Estimator",
-      "short_name": "Estimator",
-      "description": "Commercial Estimating & Proposals",
-      "url": "Spotless_Estimator.html",
-      "icons": [{ "src": "icon-192-est.png", "sizes": "192x192" }]
     }
   ]
 }
