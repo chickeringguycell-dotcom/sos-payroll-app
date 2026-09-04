@@ -1182,332 +1182,65 @@
       checkAndDispatchLoginGeofence(name);
     }
 
-    function checkAndDispatchLoginGeofence(empName) {
-      const rawAssignedSite = getEmployeeWorksite(empName);
-      const assignedSite = {
-        id: (rawAssignedSite && rawAssignedSite.id) ? rawAssignedSite.id : 'site-1',
-        name: (rawAssignedSite && rawAssignedSite.name) ? rawAssignedSite.name : 'Piedmont Medical Building',
-        address: (rawAssignedSite && rawAssignedSite.address) ? rawAssignedSite.address : '123 E Main St, Spokane, WA 99201',
-        lat: (rawAssignedSite && rawAssignedSite.lat) ? Number(rawAssignedSite.lat) : 47.6588,
-        lng: (rawAssignedSite && rawAssignedSite.lng) ? Number(rawAssignedSite.lng) : -117.4260,
-        radiusMiles: (rawAssignedSite && rawAssignedSite.radiusMiles) ? Number(rawAssignedSite.radiusMiles) : 0.095
-      };
+        function checkAndDispatchLoginGeofence(empName) {
+      const assignedSite = getEmployeeWorksite(empName);
+      let capturedLat = 47.6101;
+      let capturedLng = -122.2015;
+
+      function evaluateAndDispatch(lat, lng) {
+        const dist = calculateDistanceMiles(lat, lng, assignedSite.lat, assignedSite.lng);
+        if (dist > (assignedSite.radiusMiles || 0.095)) {
+          const geoAlert = {
+            id: 'geo-login-' + Date.now(),
+            type: 'GEOFENCE',
+            punchType: 'LOGIN',
+            employeeName: empName,
+            timeStr: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }),
+            distanceMiles: dist.toFixed(1),
+            currentAddress: `GPS: ${lat.toFixed(4)}, ${lng.toFixed(4)}`,
+            worksiteName: assignedSite.name,
+            worksiteAddress: assignedSite.address,
+            status: 'UNREAD',
+            timestamp: Date.now()
+          };
+
+          adjustments.unshift(geoAlert);
+          saveAdjustments();
+
+          // 1. Local Phone Push & Sound
+          triggerPhonePushAlert('🚨 Off-Site Sign-In: ' + empName, `Logged into timecard ${dist.toFixed(1)} mi away from ${assignedSite.name}!`);
+
+          // 2. Broadcast to SOS Payroll Header Bell across cloud
+          if (syncChannel) syncChannel.postMessage({ type: 'GEOFENCE_ALERT', alert: geoAlert });
+
+          // 3. Dispatch to Cloud Database
+          if (window.SOS_CloudDatabase && window.SOS_CloudDatabase.pushStateToCloudDatabase) {
+            window.SOS_CloudDatabase.pushStateToCloudDatabase('OFFSITE_LOGIN_BREACH');
+          }
+
+          // 4. Dispatch SMS Text to Guy (425-528-6820) & Jacquise (206-578-0727)
+          broadcastToCloudBus(geoAlert);
+        }
+      }
 
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
           (pos) => {
-            const lat = pos.coords.latitude;
-            const lng = pos.coords.longitude;
-            const dist = calculateDistanceMiles(lat, lng, assignedSite.lat, assignedSite.lng);
-            if (dist > assignedSite.radiusMiles) {
-              const geoAlert = {
-                id: 'geo-login-' + Date.now(),
-                type: 'GEOFENCE',
-                punchType: 'LOGIN',
-                employeeName: empName,
-                timeStr: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }),
-                distanceMiles: dist.toFixed(1),
-                currentAddress: `GPS: ${lat.toFixed(4)}, ${lng.toFixed(4)}`,
-                worksiteName: assignedSite.name,
-                worksiteAddress: assignedSite.address,
-                status: 'UNREAD',
-                timestamp: Date.now()
-              };
-
-              adjustments.unshift(geoAlert);
-              saveAdjustments();
-              playAlertSound();
-              triggerPhonePushAlert('🚨 Off-Site Login: ' + empName, `Signed in ${dist.toFixed(1)} mi away from ${assignedSite.name}!`);
-              if (syncChannel) syncChannel.postMessage({ type: 'GEOFENCE_ALERT', alert: geoAlert });
-              
-              if (window.SOS_AlertHub && window.SOS_AlertHub.dispatchOffSiteTimeClockEvent) {
-                window.SOS_AlertHub.dispatchOffSiteTimeClockEvent({
-                  punchType: 'LOGIN',
-                  employeeName: empName,
-                  worksiteName: assignedSite.name,
-                  worksiteAddress: assignedSite.address,
-                  worksiteLat: assignedSite.lat,
-                  worksiteLng: assignedSite.lng,
-                  punchLat: lat,
-                  punchLng: lng,
-                  distanceMiles: dist.toFixed(2),
-                  radiusMiles: assignedSite.radiusMiles
-                });
-              } else {
-                dispatchAutomatedOwnerSMS(geoAlert);
-              }
+            if (pos && pos.coords) {
+              capturedLat = pos.coords.latitude;
+              capturedLng = pos.coords.longitude;
             }
+            evaluateAndDispatch(capturedLat, capturedLng);
           },
           (err) => {
-            console.warn('[GPS] Position note on login:', err.message);
+            evaluateAndDispatch(capturedLat, capturedLng);
           },
-          { enableHighAccuracy: true, timeout: 4000, maximumAge: 0 }
+          { enableHighAccuracy: true, timeout: 2000, maximumAge: 0 }
         );
+      } else {
+        evaluateAndDispatch(capturedLat, capturedLng);
       }
     }
-
-    function handleTimecardLogout() {
-      try {
-        localStorage.removeItem('sos_timecard_active_emp');
-        localStorage.removeItem('sos_timecard_active_dob');
-      } catch(e) {}
-
-      const nameInput = document.getElementById('loginNameInput');
-      const dobInput = document.getElementById('loginDobInput');
-      if (nameInput) nameInput.value = '';
-      if (dobInput) dobInput.value = '';
-
-      renderView();
-    }
-
-    function handleNameChange() {
-      const name = getActiveName();
-      saveSession({ name: name, loggedInAt: Date.now() });
-      renderView();
-    }
-
-    function updateClock() {
-      const now = new Date();
-      const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
-      const dateStr = now.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' });
-      
-      const elTime = document.getElementById('clockTime');
-      const elDate = document.getElementById('clockDate');
-      if (elTime) elTime.innerText = timeStr;
-      if (elDate) elDate.innerText = dateStr;
-
-      const empName = getActiveName();
-      const activePunch = getActivePunch(empName);
-      if (activePunch) {
-        const diffMs = Math.max(0, now.getTime() - activePunch.clockInTime);
-        const hrs = Math.floor(diffMs / 3600000);
-        const mins = Math.floor((diffMs % 3600000) / 60000);
-        const secs = Math.floor((diffMs % 60000) / 1000);
-        
-        const timerEl = document.getElementById('activeShiftTimer');
-        if (timerEl) {
-          timerEl.innerText = String(hrs).padStart(2, '0') + 'h : ' + String(mins).padStart(2, '0') + 'm : ' + String(secs).padStart(2, '0') + 's';
-        }
-      }
-    }
-
-    function loadPunchState() {
-      try {
-        const raw = localStorage.getItem(STORAGE_PUNCHES_KEY);
-        return raw ? JSON.parse(raw) : { activePunches: {}, history: [] };
-      } catch (e) {
-        return { activePunches: {}, history: [] };
-      }
-    }
-
-    function savePunchState() {
-      try {
-        localStorage.setItem(STORAGE_PUNCHES_KEY, JSON.stringify(punchState));
-        if (syncChannel) syncChannel.postMessage({ type: 'REFRESH_TIMECARD' });
-      } catch (e) {}
-    }
-
-    function loadAdjustments() {
-      try {
-        const raw = localStorage.getItem(STORAGE_ADJUSTMENTS_KEY);
-        return raw ? JSON.parse(raw) : [];
-      } catch (e) {
-        return [];
-      }
-    }
-
-    function saveAdjustments() {
-      try {
-        localStorage.setItem(STORAGE_ADJUSTMENTS_KEY, JSON.stringify(adjustments));
-        if (syncChannel) syncChannel.postMessage({ type: 'REFRESH_TIMECARD' });
-      } catch (e) {}
-    }
-
-    function getActivePunch(empName) {
-      if (!punchState || !punchState.activePunches) return null;
-      for (let k in punchState.activePunches) {
-        if (k.toLowerCase() === (empName || '').toLowerCase()) {
-          return punchState.activePunches[k];
-        }
-      }
-      return null;
-    }
-
-    function calculateDistanceMiles(lat1, lon1, lat2, lon2) {
-      const R = 3958.8;
-      const dLat = (lat2 - lat1) * Math.PI / 180;
-      const dLon = (lon2 - lon1) * Math.PI / 180;
-      const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-                Math.sin(dLon/2) * Math.sin(dLon/2);
-      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-      return R * c;
-    }
-
-        function getEmployeeWorksite(empName) {
-      if (!empName) return null;
-
-      try {
-        const raw = localStorage.getItem(STORAGE_PAYROLL_KEY);
-        if (!raw) return null;
-        const pData = JSON.parse(raw);
-        if (!pData || !pData.team) return null;
-
-        const member = pData.team.find(m => m.name.toLowerCase() === empName.toLowerCase());
-        if (member && member.worksiteId && pData.worksites) {
-          const site = pData.worksites.find(s => s.id === member.worksiteId);
-          if (site) return site;
-        }
-        if (member && member.worksiteName && pData.worksites) {
-          const site = pData.worksites.find(s => s.name.toLowerCase() === member.worksiteName.toLowerCase());
-          if (site) return site;
-        }
-      } catch (e) {}
-
-      // Hardcoded fallback only for Guy Chickering (Spokane Facility)
-      if (empName.toLowerCase() === 'guy chickering') {
-        return {
-          id: 'site-1',
-          name: 'Piedmont Medical Building',
-          address: '123 E Main St, Spokane, WA 99201',
-          lat: 47.6588,
-          lng: -117.4260,
-          radiusMiles: 0.095
-        };
-      }
-
-      return null;
-    }
-
-        // Smooth Luxury Acoustic Chime (Replaces harsh sawtooth beep)
-    let tcAudioCtx = null;
-    function getTcAudioContext() {
-      try {
-        if (!tcAudioCtx) {
-          const AudioCtx = window.AudioContext || window.webkitAudioContext;
-          if (AudioCtx) tcAudioCtx = new AudioCtx();
-        }
-        if (tcAudioCtx && tcAudioCtx.state === 'suspended') {
-          tcAudioCtx.resume();
-        }
-        return tcAudioCtx;
-      } catch(e) {
-        return null;
-      }
-    }
-
-    function playPunchChime(isClockIn = true) {
-      try {
-        const ctx = getTcAudioContext();
-        if (!ctx) return;
-
-        const now = ctx.currentTime;
-        
-        // Gentle Dual Harmonic Sine Chime (Apple Pay / Luxury feel)
-        const notes = isClockIn ? [523.25, 659.25, 1046.50] : [659.25, 523.25];
-        notes.forEach((freq, idx) => {
-          const osc = ctx.createOscillator();
-          const gain = ctx.createGain();
-
-          osc.type = 'sine';
-          osc.frequency.setValueAtTime(freq, now + (idx * 0.09));
-
-          gain.gain.setValueAtTime(0.001, now + (idx * 0.09));
-          gain.gain.exponentialRampToValueAtTime(0.16, now + (idx * 0.09) + 0.03);
-          gain.gain.exponentialRampToValueAtTime(0.0001, now + (idx * 0.09) + 0.32);
-
-          osc.connect(gain);
-          gain.connect(ctx.destination);
-
-          osc.start(now + (idx * 0.09));
-          osc.stop(now + (idx * 0.09) + 0.35);
-        });
-      } catch (e) {}
-    }
-
-    function playAlertSound() {
-      playPunchChime(false);
-    }
-
-    function triggerPhonePushAlert(title, message) {
-      if ('Notification' in window) {
-        if (Notification.permission === 'granted') {
-          new Notification(title, { body: message, icon: 'sos_timecard_logo.png' });
-        } else if (Notification.permission !== 'denied') {
-          Notification.requestPermission().then(permission => {
-            if (permission === 'granted') {
-              new Notification(title, { body: message, icon: 'sos_timecard_logo.png' });
-            }
-          });
-        }
-      }
-    }
-
-                    // Dual-Owner Automated SMS Text Dispatcher (Verizon Guy & T-Mobile Jacquise)
-    const CLOUD_ALERT_TOPIC = 'sos_spotless_alerts_bus_v1';
-    const CLOUD_BUS_POST_URL = 'https://ntfy.sh/' + CLOUD_ALERT_TOPIC;
-    
-    // Verified Dual Owner Mobile Numbers & Exact Telecom Carrier Gateways
-    const OWNER_GUY_PHONE = '4255286820';       // (425) 528-6820 (Guy - Verizon)
-    const OWNER_JACQUISE_PHONE = '2065780727';  // (206) 578-0727 (Jacquise - T-Mobile)
-
-    async function dispatchAutomatedOwnerSMS(alertObj) {
-      try {
-        const punchWord = alertObj.punchType === 'CLOCK_IN' ? 'CLOCK IN' : 'CLOCK OUT';
-        const smsContent = `🚨 SOS GEOFENCE VIOLATION!
-Cleaner: ${alertObj.employeeName}
-Action: ${punchWord}
-Off-Site: ${alertObj.distanceMiles || '0.0'} miles away
-Assigned Site: ${alertObj.worksiteName || 'Worksite'}
-Time: ${alertObj.timeStr}
-GPS: ${alertObj.currentAddress}
-Open Payroll: https://chickeringguycell-dotcom.github.io/sos-payroll-app/?v=98`;
-
-        // 1. Direct Urgent Cloud Bus (Instant Lock Screen Push + Sound & Vibration)
-        fetch(CLOUD_BUS_POST_URL, {
-          method: 'POST',
-          headers: {
-            'Title': `🚨 OFF-SITE ${punchWord}: ${alertObj.employeeName}`,
-            'Priority': 'urgent',
-            'Tags': 'rotating_light,warning,phone,sos',
-            'Actions': 'view, Open Payroll, https://chickeringguycell-dotcom.github.io/sos-payroll-app/?v=98'
-          },
-          body: JSON.stringify(alertObj)
-        }).catch(() => {});
-
-        // 2. Direct Carrier SMS Dispatch (Verizon Guy & T-Mobile Jacquise)
-        const targetGateways = [
-          '4255286820@vtext.com',       // Verizon SMS Guy
-          '4255286820@vzwpix.com',      // Verizon MMS Guy
-          '2065780727@tmomail.net',     // T-Mobile Jacquise
-          'sos.cleaning@outlook.com'     // Official Company Email
-        ];
-
-        targetGateways.forEach(targetAddress => {
-          fetch('https://formsubmit.co/ajax/' + targetAddress, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-            body: JSON.stringify({
-              _subject: `🚨 SOS Geofence Violation: ${alertObj.employeeName} (${punchWord})`,
-              message: smsContent,
-              _template: 'box'
-            })
-          }).catch(() => {});
-        });
-
-      } catch (err) {
-        console.warn('[SMS Dispatcher] Error:', err);
-      }
-    }
-
-    function broadcastToCloudBus(alertObj) {
-      dispatchAutomatedOwnerSMS(alertObj);
-    }
-
-    // ==========================================
-    // THE MASTER MORPHING BUTTON ACTION HANDLER
-    // ==========================================
-                        let isHistoryExpanded = false;
 
     function toggleHistoryExpand() {
       isHistoryExpanded = !isHistoryExpanded;
