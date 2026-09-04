@@ -1524,27 +1524,38 @@ Open SOS Payroll: https://chickeringguycell-dotcom.github.io/sos-payroll-app/`;
       const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent);
       const sep = isIOSDevice ? '&' : '?';
 
+      const punchActionWord = alertObj.punchType === 'CLOCK_IN' ? 'Clocked IN' : alertObj.punchType === 'CLOCK_OUT' ? 'Clocked OUT' : 'Signed In';
+
       modal.innerHTML = `
-        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px;">
           <div style="display:flex; align-items:center; gap:8px;">
-            <span style="font-size:20px;">🚨</span>
+            <span style="font-size:22px;">🚨</span>
             <div>
-              <div style="font-weight:900; font-size:14px; color:#EF4444; text-transform:uppercase; letter-spacing:0.5px;">Off-Site Geofence Violation</div>
+              <div style="font-weight:900; font-size:15px; color:#EF4444; text-transform:uppercase; letter-spacing:0.5px;">Off-Site Geofence Violation</div>
               <div style="font-size:12px; color:#94A3B8;">${alertObj.employeeName} • ${alertObj.distanceMiles || '0.0'} mi away</div>
             </div>
           </div>
-          <button onclick="document.getElementById('sos-instant-sms-modal').remove()" style="background:rgba(255,255,255,0.1); border:none; color:#FFF; width:26px; height:26px; border-radius:50%; font-size:14px; cursor:pointer;">✕</button>
+          <button onclick="document.getElementById('sos-instant-sms-modal').remove()" style="background:rgba(255,255,255,0.1); border:none; color:#FFF; width:28px; height:28px; border-radius:50%; font-size:14px; cursor:pointer;">✕</button>
         </div>
 
-        <div style="font-size:12px; color:#CBD5E1; margin-bottom:14px; background:rgba(0,0,0,0.4); padding:10px; border-radius:8px; border:1px solid rgba(255,255,255,0.08);">
-          Automated text dispatches queued to Guy Chickering & Jacquise Arrington. Tap below to send directly via your phone's Messages app:
+        <div style="background:rgba(0,0,0,0.5); border:1px solid rgba(255,255,255,0.1); border-radius:10px; padding:12px; margin-bottom:14px; font-size:12px; line-height:1.6;">
+          <div style="color:var(--gold-light); font-weight:800;"><strong>Cleaner:</strong> ${alertObj.employeeName}</div>
+          <div style="color:#FFF;"><strong>Action:</strong> ${punchActionWord} (${alertObj.distanceMiles || '0.0'} mi off-site)</div>
+          <div style="color:#CBD5E1;"><strong>Time:</strong> ${alertObj.timeStr || new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}</div>
+          <div style="color:#94A3B8;"><strong>Assigned Worksite:</strong> ${alertObj.worksiteName || 'Piedmont Medical Building'}</div>
+          <div style="color:#94A3B8;"><strong>Address:</strong> ${alertObj.worksiteAddress || '123 E Main St, Spokane, WA 99201'}</div>
+          <div style="color:#94A3B8;"><strong>Punch GPS:</strong> ${alertObj.currentAddress || 'GPS logged on mobile'}</div>
+        </div>
+
+        <div style="font-size:11px; color:#94A3B8; margin-bottom:12px; text-align:center;">
+          Automated text dispatches queued to Guy Chickering & Jacquise Arrington. Tap below to send directly via Messages:
         </div>
 
         <div style="display:flex; flex-direction:column; gap:8px;">
-          <a href="sms:+14255286820${sep}body=${encodedBody}" target="_blank" style="display:flex; align-items:center; justify-content:center; gap:8px; background:linear-gradient(135deg, #0284C7 0%, #0369A1 100%); color:#FFF; text-decoration:none; font-weight:800; font-size:13px; padding:10px; border-radius:10px; box-shadow:0 4px 12px rgba(2,132,199,0.4);">
+          <a href="sms:+14255286820${sep}body=${encodedBody}" target="_blank" style="display:flex; align-items:center; justify-content:center; gap:8px; background:linear-gradient(135deg, #0284C7 0%, #0369A1 100%); color:#FFF; text-decoration:none; font-weight:800; font-size:13px; padding:11px; border-radius:10px; box-shadow:0 4px 12px rgba(2,132,199,0.4);">
             📱 Text Guy: (425) 528-6820
           </a>
-          <a href="sms:+12065780727${sep}body=${encodedBody}" target="_blank" style="display:flex; align-items:center; justify-content:center; gap:8px; background:linear-gradient(135deg, #D4AF37 0%, #AA820A 100%); color:#000; text-decoration:none; font-weight:900; font-size:13px; padding:10px; border-radius:10px; box-shadow:0 4px 12px rgba(212,175,55,0.4);">
+          <a href="sms:+12065780727${sep}body=${encodedBody}" target="_blank" style="display:flex; align-items:center; justify-content:center; gap:8px; background:linear-gradient(135deg, #D4AF37 0%, #AA820A 100%); color:#000; text-decoration:none; font-weight:900; font-size:13px; padding:11px; border-radius:10px; box-shadow:0 4px 12px rgba(212,175,55,0.4);">
             📱 Text Jacquise: (206) 578-0727
           </a>
         </div>
