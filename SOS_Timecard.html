@@ -1464,20 +1464,19 @@
 
     async function dispatchAutomatedOwnerSMS(alertObj) {
       try {
-        const punchWord = alertObj.punchType === 'CLOCK_IN' ? 'CLOCK IN' 
-          : alertObj.punchType === 'CLOCK_OUT' ? 'CLOCK OUT' 
-          : alertObj.punchType === 'LOGIN' ? 'SIGN IN / LOGIN'
-          : 'GEOFENCE ALERT';
+        const punchWord = alertObj.punchType === 'CLOCK_IN' ? 'Clocked IN' 
+          : alertObj.punchType === 'CLOCK_OUT' ? 'Clocked OUT' 
+          : alertObj.punchType === 'LOGIN' ? 'Signed In'
+          : 'Punched';
         
-        const smsContent = `🚨 SPOTLESS GEOFENCE VIOLATION!
+        const smsContent = `🚨 SOS GEOFENCE VIOLATION!
 Cleaner: ${alertObj.employeeName}
-Action: ${punchWord}
-Off-Site: ${alertObj.distanceMiles || '0.0'} miles away
-Assigned Worksite: ${alertObj.worksiteName || 'Piedmont Medical Building'}
-Worksite Address: ${alertObj.worksiteAddress || '123 E Main St, Spokane, WA 99201'}
+Action: ${punchWord} (${alertObj.distanceMiles || '0.0'} mi off-site)
 Punch Time: ${alertObj.timeStr || new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}
-Actual GPS Location: ${alertObj.currentAddress || 'GPS on file'}
-Open Payroll: https://chickeringguycell-dotcom.github.io/sos-payroll-app/`;
+Assigned Worksite: ${alertObj.worksiteName || 'Piedmont Medical Building'}
+Address: ${alertObj.worksiteAddress || '123 E Main St, Spokane, WA 99201'}
+Punch Location: ${alertObj.currentAddress || 'GPS logged on mobile'}
+Open SOS Payroll: https://chickeringguycell-dotcom.github.io/sos-payroll-app/`;
 
         // 1. Dispatch to Cloud Bus with Urgent SMS priority (instant lock-screen notification + siren)
         fetch(CLOUD_BUS_POST_URL, {

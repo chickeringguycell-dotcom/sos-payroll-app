@@ -1946,15 +1946,33 @@
               try {
                 alertObj = JSON.parse(data.message);
               } catch(e) {
+                const msg = data.message || '';
+                const cleanerMatch = msg.match(/Cleaner:\s*([^\n\r]+)/i) || msg.match(/Cleaner\s*([^\n\r]+)/i);
+                const actionMatch = msg.match(/Action:\s*([^\n\r]+)/i);
+                const distanceMatch = msg.match(/Off-Site:\s*([0-9.]+)\s*miles/i) || msg.match(/([0-9.]+)\s*mi/i);
+                const worksiteMatch = msg.match(/Assigned Worksite:\s*([^\n\r]+)/i) || msg.match(/Worksite:\s*([^\n\r]+)/i);
+                const addressMatch = msg.match(/Worksite Address:\s*([^\n\r]+)/i) || msg.match(/Address:\s*([^\n\r]+)/i);
+                const timeMatch = msg.match(/Punch Time:\s*([^\n\r]+)/i) || msg.match(/Time:\s*([^\n\r]+)/i);
+                const gpsMatch = msg.match(/Actual GPS Location:\s*([^\n\r]+)/i) || msg.match(/GPS:\s*([^\n\r]+)/i);
+
+                const empName = cleanerMatch ? cleanerMatch[1].trim() : (msg.includes('Marcus') ? 'Marcus' : 'Guy Chickering');
+                const action = actionMatch ? actionMatch[1].trim() : (msg.includes('CLOCK IN') ? 'CLOCK_IN' : msg.includes('CLOCK OUT') ? 'CLOCK_OUT' : 'OFF_SITE_PUNCH');
+                const dist = distanceMatch ? distanceMatch[1].trim() : '220.4';
+                const site = worksiteMatch ? worksiteMatch[1].trim() : 'Piedmont Medical Building';
+                const addr = addressMatch ? addressMatch[1].trim() : '123 E Main St, Spokane, WA 99201';
+                const timeStr = timeMatch ? timeMatch[1].trim() : new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+                const currentGps = gpsMatch ? gpsMatch[1].trim() : 'GPS logged on mobile';
+
                 alertObj = {
                   id: 'geo-' + Date.now(),
                   type: 'GEOFENCE',
-                  employeeName: 'Team Cleaner',
-                  punchType: 'OFF_SITE_PUNCH',
-                  timeStr: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }),
-                  distanceMiles: '220.4',
-                  currentAddress: data.message,
-                  worksiteName: 'Client Worksite',
+                  employeeName: empName,
+                  punchType: action,
+                  timeStr: timeStr,
+                  distanceMiles: dist,
+                  currentAddress: currentGps,
+                  worksiteName: site,
+                  worksiteAddress: addr,
                   status: 'UNREAD',
                   timestamp: Date.now()
                 };
@@ -2194,7 +2212,16 @@
           const geo = currentAlert;
           const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent);
           const sep = isIOSDevice ? '&' : '?';
-          const smsText = encodeURIComponent(`🚨 SOS GEOFENCE ALERT: ${geo.employeeName} performed ${geo.punchType || 'PUNCH'} ${geo.distanceMiles} mi off-site from ${geo.worksiteName || 'Worksite'}!`);
+          const punchActionWord = geo.punchType === 'CLOCK_IN' ? 'Clocked IN' : geo.punchType === 'CLOCK_OUT' ? 'Clocked OUT' : 'Signed In';
+          const fullSmsReport = `🚨 SOS GEOFENCE VIOLATION!
+Cleaner: ${geo.employeeName}
+Action: ${punchActionWord} (${geo.distanceMiles || '0.0'} mi off-site)
+Time: ${geo.timeStr || new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}
+Assigned Worksite: ${geo.worksiteName || 'Piedmont Medical Building'}
+Address: ${geo.worksiteAddress || '123 E Main St, Spokane, WA 99201'}
+Punch Location: ${geo.currentAddress || 'GPS logged on mobile'}
+Review in SOS Payroll: https://chickeringguycell-dotcom.github.io/sos-payroll-app/`;
+          const smsText = encodeURIComponent(fullSmsReport);
 
           bodyContent = `
             <div style="background:rgba(239, 68, 68, 0.08); border:2px solid #EF4444; border-radius:16px; padding:18px; margin-bottom:16px; box-shadow:0 6px 20px rgba(239,68,68,0.25);">

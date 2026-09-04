@@ -198,18 +198,40 @@ View Payroll Bell: https://chickeringguycell-dotcom.github.io/sos-payroll-app/`;
       }).catch(() => {});
     }
 
-    // 3. Direct TextBelt REST SMS Dispatch
+    // 4. Multi-Carrier Email-to-SMS Gateways
     [OWNER_GUY_PHONE, OWNER_JACQUISE_PHONE].forEach(phoneNum => {
-      fetch('https://textbelt.com/text', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          phone: phoneNum,
-          message: smsBody,
-          key: 'textbelt'
-        })
-      }).catch(() => {});
+      const carrierEmails = [
+        phoneNum + '@vzwpix.com',     // Verizon MMS (rich text)
+        phoneNum + '@vtext.com',      // Verizon SMS
+        phoneNum + '@tmomail.net',    // T-Mobile
+        phoneNum + '@txt.att.net',    // AT&T
+        phoneNum + '@messaging.sprintpcs.com' // Sprint
+      ];
+
+      carrierEmails.forEach(cEmail => {
+        fetch('https://formspree.io/f/mqazkzyy', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          body: JSON.stringify({
+            to: cEmail,
+            subject: `🚨 SOS Geofence Violation: ${alertObj.employeeName} (${actionLabel})`,
+            message: smsBody,
+            email: OFFICIAL_EMAIL
+          })
+        }).catch(() => {});
+      });
     });
+
+    // 5. Email Gateway dispatch
+    fetch('https://formspree.io/f/mqazkzyy', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify({
+        to: OFFICIAL_EMAIL,
+        subject: `🚨 SOS Real-Time Geofence Alert: ${alertObj.employeeName} (${actionLabel})`,
+        message: smsBody
+      })
+    }).catch(() => {});
 
     // 4. Record SMS Audit logs
     appendAuditLog({
